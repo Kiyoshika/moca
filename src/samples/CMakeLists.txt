@@ -36,3 +36,16 @@ target_include_directories(create_token_array
 target_link_libraries(create_token_array
 	mocatokenarray
 )
+
+# CREATE TOKENIZER
+add_executable(create_tokenizer
+	create_tokenizer.c
+)
+target_include_directories(create_tokenizer
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+target_link_libraries(create_tokenizer
+	mocasrcbuffer
+	mocatokenizer
+)

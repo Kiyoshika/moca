@@ -33,5 +33,9 @@ bool tkn_array_push(
 	struct token_array_t* token_array,
 	const struct token_t* token);
 
+// Resets array to 0 but doesn't deallocate any memory
+void tkn_array_clear(
+	struct token_array_t* token_array);
+
 
 #endif

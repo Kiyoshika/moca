@@ -41,3 +41,12 @@ bool tkn_array_push(
 
 	return true;
 }
+
+void tkn_array_clear(
+	struct token_array_t* token_array)
+{
+	// technically only need to use token_array->length but doing capacity
+	// just to be safe...
+	memset(token_array->tokens, 0, token_array->capacity * sizeof(*token_array->tokens));
+	token_array->length = 0;
+}
