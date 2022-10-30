@@ -1,6 +1,7 @@
 # copy necessary files to build folder
 configure_file(buffer.moca buffer.moca COPYONLY)
 
+# READ SOURCE BUFFER
 add_executable(read_source_buffer
 	read_source_buffer.c
 )
@@ -12,6 +13,7 @@ target_link_libraries(read_source_buffer
 	mocasrcbuffer
 )
 
+# CREATE TOKEN
 add_executable(create_token
 	create_token.c
 )
@@ -21,4 +23,16 @@ target_include_directories(create_token
 )
 target_link_libraries(create_token
 	mocatoken
+)
+
+# CREATE TOKEN ARRAY
+add_executable(create_token_array
+	create_token_array.c
+)
+target_include_directories(create_token_array
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+target_link_libraries(create_token_array
+	mocatokenarray
 )
