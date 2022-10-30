@@ -5,11 +5,14 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <string.h>
+
+#define MAX_LINE_LEN 251
 
 struct source_buffer_t
 {
-	char* buffer;
-	size_t length;
+	char (*line)[MAX_LINE_LEN];
+	size_t n_lines;
 };
 
 // Pass a source_buffer_t by address and read a file

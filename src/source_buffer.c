@@ -9,13 +9,21 @@ bool srcbuffer_read(
 	if (!src_file)
 		return false;
 
-	fseek(src_file, 0L, SEEK_END);
-	source_buffer->length = ftell(src_file);
-	source_buffer->buffer = calloc(source_buffer->length, sizeof(char));
-	if (!source_buffer->buffer)
-		return false;
-	rewind(src_file);
-	fread(source_buffer->buffer, sizeof(char), source_buffer->length, src_file);
+	// count total lines in file
+	char current_line[MAX_LINE_LEN];
+	source_buffer->n_lines = 0;
+
+	while (fgets(current_line, MAX_LINE_LEN, src_file) != NULL)
+		source_buffer->n_lines++;
+
+	rewind(src_file); // reset file pointer back to beginning
+	
+	source_buffer->line = calloc(source_buffer->n_lines, MAX_LINE_LEN);
+
+	// read lines into each line buffer
+	size_t current_line_num = 0;
+	while (fgets(current_line, MAX_LINE_LEN, src_file) != NULL)
+		memcpy(&source_buffer->line[current_line_num++][0], current_line, strlen(current_line));
 
 	fclose(src_file);
 
@@ -25,8 +33,8 @@ bool srcbuffer_read(
 void srcbuffer_free(
 	struct source_buffer_t* source_buffer)
 {
-	free(source_buffer->buffer);
-	source_buffer->buffer = NULL;
+	free(source_buffer->line);
+	source_buffer->line= NULL;
 
-	source_buffer->length = 0;
+	source_buffer->n_lines = 0;
 }
