@@ -1,5 +1,6 @@
 # copy necessary files to build folder
 configure_file(buffer.moca buffer.moca COPYONLY)
+configure_file(mainfile.moca mainfile.moca COPYONLY)
 
 # READ SOURCE BUFFER
 add_executable(read_source_buffer
