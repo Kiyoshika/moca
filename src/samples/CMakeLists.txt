@@ -50,3 +50,17 @@ target_link_libraries(create_tokenizer
 	mocasrcbuffer
 	mocatokenizer
 )
+
+# CREATE LEXER
+add_executable(create_lexer
+	create_lexer.c
+)
+target_include_directories(create_lexer
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+target_link_libraries(create_lexer
+	mocasrcbuffer
+	mocatokenizer
+	mocalexer
+)

@@ -1,5 +1,35 @@
 #include "token.h"
 
+char token_list[N_TOKENS][MAX_TOKEN_LIST_LEN] = {
+	"!=",
+	"%",
+	"&&",
+	"(",
+	")",
+	"*",
+	"+",
+	"++",
+	"+=",
+	"-",
+	"--",
+	"-=",
+	"/",
+	";",
+	"<",
+	"<=",
+	"=",
+	"==",
+	">",
+	">=",
+	"int16",
+	"int32",
+	"int64",
+	"int8",
+	"{",
+	"||",
+	"}"	
+};
+
 void tkn_create(
 	struct token_t* token,
 	const char* token_text,
@@ -15,4 +45,7 @@ void tkn_create(
 	token->char_pos = char_pos;
 	memcpy(&token->text[0], token_text, text_len);
 	token->text[text_len] = '\0';
+
+	token->type = TYPE_UNASSIGNED;
+	token->category = CATEGORY_UNASSIGNED;
 }

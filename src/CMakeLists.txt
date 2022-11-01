@@ -40,4 +40,16 @@ target_link_libraries(mocatokenizer
 	mocatokenarray
 )
 
+# LEXER
+add_library(mocalexer
+	lexer.c
+)
+target_include_directories(mocalexer
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+target_link_libraries(mocalexer
+	mocatokenarray
+)
+
 add_subdirectory(samples)
