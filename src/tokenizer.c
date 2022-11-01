@@ -29,7 +29,7 @@ void tknzer_extract_tokens(
 			const char char_value = source_buffer->line[current_line_num][current_char];
 			if (is_tokenize_char(char_value) && current_buff_idx > 0) // only tokenize if buffer is non-empty
 			{
-				tkn_create(&current_token, current_buff, current_line_num + 1, current_char - strlen(current_buff));
+				tkn_create(&current_token, current_buff, current_line_num + 1, current_char - strlen(current_buff) + 1);
 				tkn_array_push(token_array, &current_token);
 				memset(current_buff, 0, MAX_LINE_LEN);
 				current_buff_idx = 0;
