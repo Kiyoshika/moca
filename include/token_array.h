@@ -9,7 +9,7 @@
 
 struct token_array_t
 {
-	struct token_t* tokens;
+	struct token_t* token;
 	size_t length; // current number of tokens in array
 	size_t capacity; // total POSSIBLE number of tokens
 };

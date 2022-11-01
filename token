@@ -1,0 +1,26 @@
+src/lexer.c:	for (size_t i = 0; i < token_array->length; ++i)
+src/lexer.c:			token_array->token[i].text,
+src/lexer.c:			strtod(token_array->token[i].text, &endptr);
+src/lexer.c:				token_array->token[i].type = NUMBER;
+src/lexer.c:				token_array->token[i].type = TEXT;
+src/lexer.c:			token_array->token[i].category = NONE;
+src/lexer.c:			token_array->token[i].type = idx;
+src/lexer.c:					token_array->token[i].category = DATATYPE;
+src/lexer.c:					token_array->token[i].category = OPERATOR;
+src/lexer.c:					token_array->token[i].category = LOGICAL;
+src/lexer.c:					token_array->token[i].category = NONE;
+src/token_array.c:	token_array->tokens = tokens;
+src/token_array.c:	token_array->capacity = capacity;
+src/token_array.c:	token_array->length = 0;
+src/token_array.c:	free(token_array->tokens);
+src/token_array.c:	token_array->tokens = NULL;
+src/token_array.c:	token_array->length = 0;
+src/token_array.c:	token_array->capacity = 0;
+src/token_array.c:	memcpy(&token_array->token[token_array->length++], token, sizeof(*token));
+src/token_array.c:	if (token_array->length == token_array->capacity)
+src/token_array.c:		void* alloc = realloc(token_array->tokens, sizeof(*token) * token_array->capacity * 2);
+src/token_array.c:		token_array->tokens = alloc;
+src/token_array.c:		token_array->capacity *= 2;
+src/token_array.c:	// technically only need to use token_array->length but doing capacity
+src/token_array.c:	memset(token_array->token, 0, token_array->capacity * sizeof(*token_array->token));
+src/token_array.c:	token_array->length = 0;

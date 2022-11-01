@@ -18,7 +18,7 @@ int main()
 	tknzer_extract_tokens(&array, &srcbuffer);
 
 	for (size_t i = 0; i < array.length; ++i)
-		print_token(&array.tokens[i]);
+		print_token(&array.token[i]);
 
 	tkn_array_free(&array);
 	srcbuffer_free(&srcbuffer);

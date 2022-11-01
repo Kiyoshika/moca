@@ -25,7 +25,7 @@ int main()
 	tkn_array_push(&array, &three);
 
 	for (size_t i = 0; i < 3; ++i)
-		print_token(&array.tokens[i]);
+		print_token(&array.token[i]);
 
 	tkn_array_free(&array);
 

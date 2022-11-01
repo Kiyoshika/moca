@@ -8,7 +8,7 @@ bool tkn_array_create(
 	if (!tokens)
 		return false;
 
-	token_array->tokens = tokens;
+	token_array->token = tokens;
 	token_array->capacity = capacity;
 	token_array->length = 0;
 
@@ -18,8 +18,8 @@ bool tkn_array_create(
 void tkn_array_free(
 	struct token_array_t* token_array)
 {
-	free(token_array->tokens);
-	token_array->tokens = NULL;
+	free(token_array->token);
+	token_array->token = NULL;
 	
 	token_array->length = 0;
 	token_array->capacity = 0;
@@ -29,13 +29,13 @@ bool tkn_array_push(
 	struct token_array_t* token_array,
 	const struct token_t* token)
 {
-	memcpy(&token_array->tokens[token_array->length++], token, sizeof(*token));
+	memcpy(&token_array->token[token_array->length++], token, sizeof(*token));
 	if (token_array->length == token_array->capacity)
 	{
-		void* alloc = realloc(token_array->tokens, sizeof(*token) * token_array->capacity * 2);
+		void* alloc = realloc(token_array->token, sizeof(*token) * token_array->capacity * 2);
 		if (!alloc)
 			return false;
-		token_array->tokens = alloc;
+		token_array->token = alloc;
 		token_array->capacity *= 2;
 	}
 
@@ -47,6 +47,6 @@ void tkn_array_clear(
 {
 	// technically only need to use token_array->length but doing capacity
 	// just to be safe...
-	memset(token_array->tokens, 0, token_array->capacity * sizeof(*token_array->tokens));
+	memset(token_array->token, 0, token_array->capacity * sizeof(*token_array->token));
 	token_array->length = 0;
 }

@@ -15,7 +15,7 @@ void lexer_parse(
 	for (size_t i = 0; i < token_array->length; ++i)
 	{
 		void* found_token = bsearch(
-			token_array->tokens[i].text,
+			token_array->token[i].text,
 			token_list, 		// defined in token.h
 			N_TOKENS, 			// defined in token.h
 			MAX_TOKEN_LIST_LEN, // defined in token.h
@@ -26,26 +26,26 @@ void lexer_parse(
 		if (!found_token)
 		{
 			char* endptr = NULL;
-			strtod(token_array->tokens[i].text, &endptr);
+			strtod(token_array->token[i].text, &endptr);
 
 			if (strlen(endptr) == 0)
-				token_array->tokens[i].type = NUMBER;
+				token_array->token[i].type = NUMBER;
 			else
-				token_array->tokens[i].type = TEXT;
+				token_array->token[i].type = TEXT;
 
-			token_array->tokens[i].category = NONE;
+			token_array->token[i].category = NONE;
 		}
 		else
 		{
 			size_t idx = (found_token - token_list_base)/MAX_TOKEN_LIST_LEN;
-			token_array->tokens[i].type = idx;
+			token_array->token[i].type = idx;
 			switch (idx)
 			{
 				case INT8:
 				case INT16:
 				case INT32:
 				case INT64:
-					token_array->tokens[i].category = DATATYPE;
+					token_array->token[i].category = DATATYPE;
 					break;
 
 				case ADDITION:
@@ -58,7 +58,7 @@ void lexer_parse(
 				case DECREMENT:
 				case PLUS_EQUALS:
 				case MINUS_EQUALS:
-					token_array->tokens[i].category = OPERATOR;
+					token_array->token[i].category = OPERATOR;
 					break;
 
 				case GREATER_THAN:
@@ -69,11 +69,11 @@ void lexer_parse(
 				case NOT_EQUAL:
 				case LOGICAL_AND:
 				case LOGICAL_OR:
-					token_array->tokens[i].category = LOGICAL;
+					token_array->token[i].category = LOGICAL;
 					break;
 
 				default:
-					token_array->tokens[i].category = NONE;
+					token_array->token[i].category = NONE;
 					break;
 				
 			}
