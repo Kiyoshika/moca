@@ -1,10 +1,5 @@
 #include "tokenizer.h"
-
-// split tokens on non-alpha/numeric characters
-static inline bool is_tokenize_char(const char tokenize_char)
-{
-	return isalnum(tokenize_char) == 0;
-}
+#include "tokenizer_internal.c"
 
 void tknzer_extract_tokens(
 	struct token_array_t* token_array,
@@ -18,8 +13,6 @@ void tknzer_extract_tokens(
 	size_t current_buff_idx = 0;
 	memset(current_buff, 0, MAX_LINE_LEN);
 	
-	// int32 main()\n
-	// {\n
 	struct token_t current_token;
 
 	for (size_t current_line_num = 0; current_line_num < source_buffer->n_lines; ++current_line_num)
@@ -27,16 +20,65 @@ void tknzer_extract_tokens(
 		for (size_t current_char = 0; current_char < strlen(source_buffer->line[current_line_num]); ++current_char)
 		{
 			const char char_value = source_buffer->line[current_line_num][current_char];
-			if (is_tokenize_char(char_value) && current_buff_idx > 0) // only tokenize if buffer is non-empty
+
+			if (current_char + 1 < strlen(source_buffer->line[current_line_num])
+					&& is_double_token(char_value, source_buffer->line[current_line_num][current_char + 1]))
 			{
-				tkn_create(&current_token, current_buff, current_line_num + 1, current_char - strlen(current_buff) + 1);
-				tkn_array_push(token_array, &current_token);
-				memset(current_buff, 0, MAX_LINE_LEN);
-				current_buff_idx = 0;
+
+				if (strlen(current_buff) > 0)
+				{
+					push_into_token_array(
+						&current_token,
+						token_array,
+						current_buff,
+						current_line_num,
+						current_char,
+						&current_buff_idx);
+				}
+
+				current_buff[current_buff_idx++] = char_value;
+				current_buff[current_buff_idx++] = source_buffer->line[current_line_num][current_char + 1];
+				current_char++;				
+
+				push_into_token_array(
+						&current_token,
+						token_array,
+						current_buff,
+						current_line_num,
+						current_char,
+						&current_buff_idx);
+
+			}
+
+			else if (is_tokenize_char(char_value))
+			{
+				if (strlen(current_buff) > 0)
+				{
+					push_into_token_array(
+						&current_token,
+						token_array,
+						current_buff,
+						current_line_num,
+						current_char,
+						&current_buff_idx);
+				}
+
+				if (!ignore_char(char_value))
+				{
+					current_buff[current_buff_idx++] = char_value;
+					push_into_token_array(
+						&current_token,
+						token_array,
+						current_buff,
+						current_line_num,
+						current_char,
+						&current_buff_idx);
+
+				}
+				
 			}
 		
-			// ignore these characters - don't add to buffer	
-			if (char_value != '\n' && char_value != ' ' && char_value != '\t')
+			else if (!ignore_char(char_value))
 				current_buff[current_buff_idx++] = char_value; 
 		}
 	}
