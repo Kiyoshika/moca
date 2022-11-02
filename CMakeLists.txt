@@ -10,3 +10,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "DebugASAN")	# cmake -DCMAKE_BUILD_TYPE=DebugAS
 endif()
 
 add_subdirectory(src)
+
+include(CTest)
+enable_testing()
+add_subdirectory(test)
