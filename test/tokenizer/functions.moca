@@ -1,0 +1,4 @@
+void function() {}
+void function(int32 x, int32 y){}
+void function(int32& x, int32& y){}
+void function(int32 &x, int32 &y){}
