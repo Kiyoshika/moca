@@ -4,23 +4,25 @@
 #include "token_array.h"
 #include "source_buffer.h"
 
-#define N_TEST_TOKENS 7 // number of tokens per test line
-#define N_TESTS 4 // number of test lines
+#define N_TEST_TOKENS 2 // number of tokens per test line
+#define N_TESTS 7 // number of test lines
 
 #include "test_tokens.c"
 
 int main()
 {
 	char expected_tokens[N_TEST_TOKENS * N_TESTS][10] = {
-		// we have four different variations of the below tokens
-		"int32", "x", "=", "12", "+", "1", ";",
-		"int32", "x", "=", "12", "+", "1", ";",
-		"int32", "x", "=", "12", "+", "1", ";",
-		"int32", "x", "=", "12", "+", "1", ";"
+		"x", "++",
+		"x", "+=",
+		"x", "--",
+		"x", "-=",
+		"x", "!=",
+		"x", "&&",
+		"x", "||"
 	};
 
 	struct source_buffer_t srcbuffer;
-	srcbuffer_read("./assignment.moca", &srcbuffer);
+	srcbuffer_read("./doubleoperators.moca", &srcbuffer);
 
 	struct token_array_t array;
 	tknzer_extract_tokens(
