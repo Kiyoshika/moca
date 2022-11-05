@@ -24,9 +24,22 @@ int main()
 	int testval = 0;
 	char* expected_msg = "Too many datatype tokens.";
 	char* actual_msg = err.msg;
+	// check correct error message
 	if (strcmp(err.msg, expected_msg) != 0)
 	{
 		fprintf(stderr, "Expected message '%s' - got '%s'\n", expected_msg, actual_msg);
+		testval = -1;
+	}
+	// check correct line number
+	if (err.line_num != 1)
+	{
+		fprintf(stderr, "Expected line number '%zu' - got '%zu'\n", (size_t)1, err.line_num);
+		testval = -1;
+	}
+	// check correct character position
+	if (err.char_pos != 7)
+	{
+		fprintf(stderr, "Expected char position '%zu' - got '%zu'\n", (size_t)7, err.char_pos);
 		testval = -1;
 	}
 
