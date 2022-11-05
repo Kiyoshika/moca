@@ -52,4 +52,15 @@ target_link_libraries(mocalexer
 	mocatokenarray
 )
 
+# ERROR MESSAGE
+add_library(mocaerr
+	err_msg.c
+)
+target_include_directories(mocaerr
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+
+add_subdirectory(parser)
 add_subdirectory(samples)
+

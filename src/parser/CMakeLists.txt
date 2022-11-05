@@ -1,0 +1,13 @@
+add_library(mocaparser
+	parser.c
+)
+target_include_directories(mocaparser
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+target_link_libraries(mocaparser
+	mocatoken
+	mocatokenarray
+	mocalexer
+	mocaerr
+)
