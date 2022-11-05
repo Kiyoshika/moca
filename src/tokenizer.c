@@ -20,11 +20,16 @@ void tknzer_extract_tokens(
 		for (size_t current_char = 0; current_char < strlen(source_buffer->line[current_line_num]); ++current_char)
 		{
 			const char char_value = source_buffer->line[current_line_num][current_char];
+			char next_char_value = 0;
+			if (current_char < strlen(source_buffer->line[current_line_num]) - 1)
+				next_char_value = source_buffer->line[current_line_num][current_char + 1];
 
+			// parse double tokens (&&, +=, !=, etc.)
 			if (current_char + 1 < strlen(source_buffer->line[current_line_num])
-					&& is_double_token(char_value, source_buffer->line[current_line_num][current_char + 1]))
+					&& is_double_token(char_value, next_char_value))
 			{
-
+				// if buffer already contains contents, tokenize that first.
+				// e.g., "z++" -> {z, ++}
 				if (strlen(current_buff) > 0)
 				{
 					push_into_token_array(
@@ -37,7 +42,7 @@ void tknzer_extract_tokens(
 				}
 
 				current_buff[current_buff_idx++] = char_value;
-				current_buff[current_buff_idx++] = source_buffer->line[current_line_num][current_char + 1];
+				current_buff[current_buff_idx++] = next_char_value;
 				current_char++;				
 
 				push_into_token_array(
@@ -50,7 +55,10 @@ void tknzer_extract_tokens(
 
 			}
 
-			else if (is_tokenize_char(char_value))
+			// tokenize whatever's currently in char buffer whenever hitting non alphanumeric characters.
+			// the only exception cases are decimals that are tied to a number (e.g., .33 or 5.63)
+			else if (is_tokenize_char(char_value)
+						&& is_not_decimal(char_value, next_char_value))
 			{
 				if (strlen(current_buff) > 0)
 				{

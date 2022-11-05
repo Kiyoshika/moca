@@ -10,6 +10,18 @@ static inline bool is_tokenize_char(const char tokenize_char)
 	return isalnum(tokenize_char) == 0;
 }
 
+// verify that a full stop '.' is not a decimal (e.g., .33 or 5.93)
+static bool is_not_decimal(
+	const char char_value,
+	const char next_char_value)
+{
+	if (char_value == '.' && next_char_value >= '0' && next_char_value <= '9')
+		return false;
+	
+	return true;
+
+}
+
 static bool ignore_char(const char char_value)
 {
 	switch (char_value)
