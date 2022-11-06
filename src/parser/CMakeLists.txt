@@ -1,9 +1,11 @@
 add_library(mocaparser
 	parser.c
+	parse_definition.c
 )
 target_include_directories(mocaparser
 	PUBLIC
 	${moca_SOURCE_DIR}/include
+	${moca_SOURCE_DIR}/include/parser
 )
 target_link_libraries(mocaparser
 	mocatoken

@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "token_array.h"
 #include "err_msg.h"
+#include "parse_definition.h"
 
 bool parse_tokens(
 	struct token_array_t* token_array,
@@ -26,31 +27,26 @@ bool parse_tokens(
 	// and will be passed by address
 	size_t token_array_idx = 0;
 
-	// used when encountering a datatype (e.g., int32) which specifies a definition (variable/function)
-	bool parsing_definition = false; 
-
 	for (token_array_idx = 0; token_array_idx < token_array->length; ++token_array_idx)
 	{
 		switch (token_array->token[token_array_idx].category)
 		{
+			// starting a statement with a data type indicates a definition
+			// is being made
 			case DATATYPE:
 			{
-				// TODO: put this inside parse_definition.c
+				tkn_array_push(&token_buffer, &token_array->token[token_array_idx++]);
 
-				// if we're already parsing a definition and encounter another datatype token, that's an error
-				if (parsing_definition)
-				{
-					err_write(err,
-							"Too many datatype tokens.",
-							token_array->token[token_array_idx].line_num,
-							token_array->token[token_array_idx].char_pos);
-							
-					parse_success = false;
+				parse_success = parse_definition(
+						token_array,
+						&token_array_idx,
+						&token_buffer,
+						err);
+
+				if (!parse_success)
 					goto endparse;
 
-				}
-				parsing_definition = true;
-				tkn_array_push(&token_buffer, &token_array->token[token_array_idx]);
+				break;
 			}
 
 			default:
