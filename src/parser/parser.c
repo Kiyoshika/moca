@@ -1,11 +1,18 @@
 #include "parser.h"
 #include "token_array.h"
 #include "err_msg.h"
+#include "parse_definition.h"
+#include "global_scope.h"
 
 bool parse_tokens(
 	struct token_array_t* token_array,
 	struct err_msg_t* err)
 {
+	// the global scope context for the entire program
+	struct global_scope_t global_scope;
+	if (!gscope_create(&global_scope, err))
+		goto endparse;
+
 	bool parse_success = true;
 
 	// we parse tokens "on the fly" meaning we don't bother
@@ -26,31 +33,45 @@ bool parse_tokens(
 	// and will be passed by address
 	size_t token_array_idx = 0;
 
-	// used when encountering a datatype (e.g., int32) which specifies a definition (variable/function)
-	bool parsing_definition = false; 
-
 	for (token_array_idx = 0; token_array_idx < token_array->length; ++token_array_idx)
 	{
 		switch (token_array->token[token_array_idx].category)
 		{
+			// starting a statement with a data type indicates a definition
+			// is being made
 			case DATATYPE:
 			{
-				// TODO: put this inside parse_definition.c
+				tkn_array_push(&token_buffer, &token_array->token[token_array_idx++]);
 
-				// if we're already parsing a definition and encounter another datatype token, that's an error
-				if (parsing_definition)
-				{
-					err_write(err,
-							"Too many datatype tokens.",
-							token_array->token[token_array_idx].line_num,
-							token_array->token[token_array_idx].char_pos);
-							
-					parse_success = false;
+				enum parse_definition_type definition_type;
+				parse_success = parse_definition(
+						token_array,
+						&token_array_idx,
+						&token_buffer,
+						&definition_type,
+						err);
+
+				if (!parse_success)
 					goto endparse;
 
+				// after determining which variable type we parsed, we can
+				// construct the object and add it to global/function scope
+				switch (definition_type)
+				{
+					case VARIABLE:
+						// TODO: construct variable and add it to function scope
+						// (or global if currently not inside function)
+						break;
+
+					case FUNCTION:
+						// TODO: construct function and add it to global scope
+						break;
+
+					default:
+						break;
 				}
-				parsing_definition = true;
-				tkn_array_push(&token_buffer, &token_array->token[token_array_idx]);
+
+				break;
 			}
 
 			default:

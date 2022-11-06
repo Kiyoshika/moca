@@ -62,5 +62,5 @@ target_include_directories(mocaerr
 )
 
 add_subdirectory(parser)
-add_subdirectory(samples)
+add_subdirectory(objects)
 
