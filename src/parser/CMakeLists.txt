@@ -11,5 +11,6 @@ target_link_libraries(mocaparser
 	mocatoken
 	mocatokenarray
 	mocalexer
+	mocaglobalscope
 	mocaerr
 )

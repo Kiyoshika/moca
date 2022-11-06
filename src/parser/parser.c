@@ -2,11 +2,17 @@
 #include "token_array.h"
 #include "err_msg.h"
 #include "parse_definition.h"
+#include "global_scope.h"
 
 bool parse_tokens(
 	struct token_array_t* token_array,
 	struct err_msg_t* err)
 {
+	// the global scope context for the entire program
+	struct global_scope_t global_scope;
+	if (!gscope_create(&global_scope, err))
+		goto endparse;
+
 	bool parse_success = true;
 
 	// we parse tokens "on the fly" meaning we don't bother
@@ -37,14 +43,33 @@ bool parse_tokens(
 			{
 				tkn_array_push(&token_buffer, &token_array->token[token_array_idx++]);
 
+				enum parse_definition_type definition_type;
 				parse_success = parse_definition(
 						token_array,
 						&token_array_idx,
 						&token_buffer,
+						&definition_type,
 						err);
 
 				if (!parse_success)
 					goto endparse;
+
+				// after determining which variable type we parsed, we can
+				// construct the object and add it to global/function scope
+				switch (definition_type)
+				{
+					case VARIABLE:
+						// TODO: construct variable and add it to function scope
+						// (or global if currently not inside function)
+						break;
+
+					case FUNCTION:
+						// TODO: construct function and add it to global scope
+						break;
+
+					default:
+						break;
+				}
 
 				break;
 			}

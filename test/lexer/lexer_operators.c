@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stddef.h>
 
-#include "lexer_helpers.c"
-
 #define N_TEST_TOKENS 10
 int main()
 {

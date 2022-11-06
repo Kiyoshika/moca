@@ -75,4 +75,12 @@ void tkn_create(
 	const size_t line_num,
 	const size_t char_pos);
 
+// convert a token type enum to char*
+char* type_to_text(
+		enum token_type_e type);
+
+// convert a token category enum to char*
+char* category_to_text(
+		enum token_category_e type);
+
 #endif

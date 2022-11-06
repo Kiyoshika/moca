@@ -1,10 +1,12 @@
 #include "parse_definition.h"
 #include "parser_internal.c"
+#include "parser.h"
 
 bool parse_definition(
 		struct token_array_t* token_array,
 		size_t* token_array_idx,
 		struct token_array_t* token_buffer,
+		enum parse_definition_type* definition_type,
 		struct err_msg_t* err)
 {
 	bool contains_end_statement = false;
@@ -14,6 +16,10 @@ bool parse_definition(
 	enum token_type_e next_expected_tokens[5];
 	size_t expected_tokens_len = 1;
 	next_expected_tokens[0] = TEXT;
+
+	// by default we'll assume we're creating a variable unless we hit
+	// specific function token (open parenthesis)
+	*definition_type = VARIABLE;
 
 	while (true)
 	{
@@ -53,6 +59,9 @@ bool parse_definition(
 			}
 			case OPEN_PAREN:
 			{
+				// text followed by open parenthesis indicates we
+				// are creating a function
+				*definition_type = FUNCTION;
 				next_expected_tokens[0] = DATATYPE;
 				next_expected_tokens[1] = CLOSE_PAREN;
 				expected_tokens_len = 2;
