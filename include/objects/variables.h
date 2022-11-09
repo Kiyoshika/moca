@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "token.h"
 
@@ -56,10 +57,11 @@ void variable_set_signed(
 		bool is_signed);
 
 // set value to variable.
-void variable_set_value(
+bool variable_set_value(
 		struct variable_t* variable,
-		void* value,
-		size_t value_bytes_size);
+		char* value,
+		bool is_negative,
+		struct err_msg_t* err);
 
 // deallocate memory from variable->value (if set)
 void variable_free(

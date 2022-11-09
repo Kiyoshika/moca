@@ -1,6 +1,7 @@
 add_library(mocaparser
 	parser.c
 	parse_definition.c
+	parser_create_variable.c
 )
 target_include_directories(mocaparser
 	PUBLIC
@@ -13,4 +14,5 @@ target_link_libraries(mocaparser
 	mocalexer
 	mocaglobalscope
 	mocaerr
+	mocavariable
 )
