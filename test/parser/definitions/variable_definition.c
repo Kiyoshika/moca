@@ -4,6 +4,7 @@
 #include "tokenizer.h"
 #include "token_array.h"
 #include "err_msg.h"
+#include "global_scope.h"
 
 int main()
 {
@@ -15,8 +16,9 @@ int main()
 
 	lexer_parse(&token_array);
 
+	struct global_scope_t global_scope;
 	struct err_msg_t err;
-	bool parsed = parse_tokens(&token_array, &err);
+	bool parsed = parse_tokens(&token_array, &global_scope, &err);
 
 	srcbuffer_free(&srcbuffer);
 	tkn_array_free(&token_array);

@@ -3,15 +3,21 @@
 #include "err_msg.h"
 #include "parse_definition.h"
 #include "global_scope.h"
+#include "parser_create_variable.h"
+#include "functions.h"
 
 bool parse_tokens(
 	struct token_array_t* token_array,
+	struct global_scope_t* global_scope,
 	struct err_msg_t* err)
 {
 	// the global scope context for the entire program
-	struct global_scope_t global_scope;
-	if (!gscope_create(&global_scope, err))
+	if (!gscope_create(global_scope, err))
 		goto endparse;
+
+	// keep track of the current local scope we're in.
+	// initially we'll be in global scope (NULL function scope)
+	struct function_t* function_scope = NULL;
 
 	bool parse_success = true;
 
@@ -59,8 +65,10 @@ bool parse_tokens(
 				switch (definition_type)
 				{
 					case VARIABLE:
-						// TODO: construct variable and add it to function scope
-						// (or global if currently not inside function)
+						if (!function_scope)
+							parser_create_global_variable(global_scope, &token_buffer, err);
+						else
+							parser_create_local_variable(function_scope, &token_buffer, err);
 						break;
 
 					case FUNCTION:
