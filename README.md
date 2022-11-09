@@ -3,14 +3,15 @@ My first ever compiled programming language - very experimental.
 
 This is aimed to be a blend of C, C++ and some custom features.
 
-You can think of this being a stripped version of C as its base with some features from C++ such as:
-* RAII (auto-deallocation)
+You can think of this being a stripped version of C as its base with some features from C++ & my own features such as:
+* RAII
 * Struct methods
+* Optional auto-generated getters/setters (custom feature)
 * References
-* Slight changes to function calls to make it explicit which variables are modified, passed by value or passed by (const) reference.
+* More explicit functions calls (custom feature) - see [below](#changes-to-function-calls) for more details
 * Lambdas
 * Namespaces
-* Named Parameters
+* Named Parameters (custom feature)
 
 # Language Design
 **NOTE:** This is still early design and syntax/functionality may be changed or even removed from the final cut.
@@ -88,6 +89,8 @@ int32 main()
 	int32 z = 0;
 	
 	func(const &x, const &y, &z);
+	
+	return 0;
 }
 ```
 
