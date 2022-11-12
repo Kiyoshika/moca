@@ -14,76 +14,30 @@ static int validate_variable(
 		const struct variable_t* variable,
 		enum token_type_e expected_type,
 		size_t expected_bytes_size,
-		int64_t expected_value) // int64_t is large enough to hold all (signed) types
+		char* expected_value)
 {
+	int valid = 0;
 	if (variable->type != expected_type)
 	{
 		fprintf(stderr, "Variable #%zu: Expected type '%s' but got '%s'.\n", current_var, type_to_text(variable->type), type_to_text(expected_type));
-		return -1;
+		valid = -1;
 	}
 
 	if (variable->bytes_size != expected_bytes_size)
 	{
 		fprintf(stderr, "Variable #%zu: Expected size (bytes) '%zu' but got '%zu'.\n", current_var, expected_bytes_size, variable->bytes_size);
-		return -1;
+		valid = -1;
 	}
 
-	switch (variable->type)
+	if (strcmp(variable->value, expected_value) != 0)
 	{
-		case INT8:
-		{
-			int8_t val = *(int8_t*)variable->value;
-			if (val != expected_value)
-			{
-				fprintf(stderr, "Variable #%zu: Expected value '%ld' but got '%d'.\n", current_var, expected_value, val);
-				return -1;
-			}
-			break;
-		}
-
-		case INT16:
-		{
-			int16_t val = *(int16_t*)variable->value;
-			if (val != expected_value)
-			{
-				fprintf(stderr, "Variable #%zu: Expected value '%ld' but got '%d'.\n", current_var, expected_value, val);
-				return -1;
-			}
-			break;
-		}
-
-		case INT32:
-		{
-			int32_t val = *(int32_t*)variable->value;	
-			if (val != expected_value)
-			{
-				fprintf(stderr, "Variable #%zu: Expected value '%ld' but got '%d'.\n", current_var, expected_value, val);
-				return -1;
-			}
-			break;
-		}
-
-		case INT64:
-		{
-			int64_t val = *(int64_t*)variable->value;	
-			if (val != expected_value)
-			{
-				fprintf(stderr, "Variable #%zu: Expected value '%ld' but got '%ld'.\n", current_var, expected_value, val);
-				return -1;
-			}
-			break;
-		}
-
-		default:
-		{
-			fprintf(stderr, "Variable: #%zu: Unknown type.", current_var);
-			return -1;
-		}
+		fprintf(stderr, "Variable #%zu: Expected value '%s' but got '%s'.\n", current_var, expected_value, variable->value);
+		valid = -1;
 	}
 
 	current_var++;
 
-	return 0;
+	return valid;
 }
 
 int main()
@@ -112,12 +66,13 @@ int main()
 	tkn_array_free(&token_array);
 
 	struct variable_t* variable = &global_scope.variables[0];
-	testval = validate_variable(variable, INT8, 1, 12);
-	if (testval == -1) return testval;
+	int valid;
+	valid = validate_variable(variable, INT8, 1, "12");
+	testval = valid == -1 ? -1 : testval;
 
 	variable = &global_scope.variables[1];
-	testval = validate_variable(variable, INT8, 1, -12);
-	if (testval == -1) return testval;
+	valid = validate_variable(variable, INT8, 1, "-12");
+	testval = valid == -1 ? -1 : testval;
 
 	return testval;
 }

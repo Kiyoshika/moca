@@ -37,7 +37,7 @@ bool parser_create_global_variable(
 	if (token_buffer->length == 2)
 	{
 		variable_set_initialized(&new_variable, false);
-		variable_set_value(&new_variable, "0", false, err); // uninitialized are defaulted to 0
+		variable_set_value(&new_variable, "0", err); // uninitialized are defaulted to 0
 		goto createvarsuccess;
 	}
 
@@ -49,10 +49,13 @@ bool parser_create_global_variable(
 	// if fourth token is "-" then it's a negative number. 
 	if (token_buffer->token[3].text[0] == '-')
 	{
-		success = variable_set_value(&new_variable, token_buffer->token[4].text, true, err);
+		char* val = calloc(strlen(token_buffer->token[4].text) + 2, sizeof(char));
+		val[0] = '-';
+		strncat(val, token_buffer->token[4].text, strlen(token_buffer->token[4].text));
+		success = variable_set_value(&new_variable, val, err);
 	}
 	else
-		success = variable_set_value(&new_variable, token_buffer->token[3].text, false, err);
+		success = variable_set_value(&new_variable, token_buffer->token[3].text, err);
 
 	if (!success)
 		return set_and_return_error(err, token_buffer, 3);

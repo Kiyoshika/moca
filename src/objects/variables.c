@@ -91,75 +91,19 @@ void variable_set_signed(
 	variable->is_signed = is_signed;
 }
 
-static bool failed_to_parse(
-		struct variable_t* variable,
-		struct err_msg_t* err)
-{
-	variable_free(variable);
-	err_write(err, "Couldn't properly parse variable's value for the specified type.", 0, 0);
-
-	return false;
-}
-
 bool variable_set_value(
 		struct variable_t* variable,
 		char* valuestr,
-		bool is_negative,
 		struct err_msg_t* err)
 {
 	if (!variable->value)
-		variable->value = calloc(1, variable->bytes_size);
-
-	char* endptr = NULL;
-
-	switch (variable->type)
+		free(variable->value);
+	
+	variable->value = strdup(valuestr);
+	if (!variable->value)
 	{
-		case INT8:
-		{
-			int8_t value = strtol(valuestr, &endptr, 10);
-			if (strlen(endptr) > 0)
-				return failed_to_parse(variable, err);
-			value = is_negative ? -1 * value : value;
-			memcpy(variable->value, &value, variable->bytes_size);
-			break;
-		}
-
-		case INT16:
-		{
-			int16_t value = strtol(valuestr, &endptr, 10);
-			if (strlen(endptr) > 0)
-				return failed_to_parse(variable, err);
-			value = is_negative ? -1 * value : value;
-			memcpy(variable->value, &value, variable->bytes_size);
-			break;
-		}
-
-		case INT32:
-		{
-			int32_t value = strtol(valuestr, &endptr, 10);
-			if (strlen(endptr) > 0)
-				return failed_to_parse(variable, err);
-			value = is_negative ? -1 * value : value;
-			memcpy(variable->value, &value, variable->bytes_size);
-			break;
-		}
-
-		case INT64:
-		{
-			int64_t value = strtoll(valuestr, &endptr, 10);
-			if (strlen(endptr) > 0)
-				return failed_to_parse(variable, err);
-			value = is_negative ? -1 * value : value;
-			memcpy(variable->value, &value, variable->bytes_size);
-			break;
-		}
-
-		default:
-		{
-			err_write(err, "Couldn't parse variable value for unknown type.", 0, 0);
-			variable_free(variable);
-			return false;
-		}
+		err_write(err, "Couldn't allocate memory for variable value.", 0, 0);
+		return false;
 	}
 	
 	return true;
