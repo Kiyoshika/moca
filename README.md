@@ -210,6 +210,9 @@ TODO: expand on some of the other features mentioned: lambdas, namespaces, etc.
 
 Will add steps on how to compile `moca` code once the actual compiler is written and functional to some degree.
 
+# CTags
+This project (optionally) uses ctags, use `make tags` from the project root to generate the tags file and be sure to set `set tags=./tags;$HOME` in your `~/.vimrc`.
+
 # Tests
 I'm not using a testing library so all the tests are "hand-crafted". Inside the `test/` directory in your build folder you can use:
 

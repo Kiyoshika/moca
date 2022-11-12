@@ -72,7 +72,9 @@ bool parse_tokens(
 						break;
 
 					case FUNCTION:
-						// TODO: construct function and add it to global scope
+						printf("\n\nFUNCTION TOKEN BUFFER:\n");
+						for (size_t i = 0; i < token_buffer.length; ++i)
+							printf("%s\n", token_buffer.token[i].text);
 						break;
 
 					default:
