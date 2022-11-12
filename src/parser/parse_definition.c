@@ -118,17 +118,26 @@ bool parse_definition(
 			// these will be parsed in a moment
 			case OPEN_BRACE:
 			{
+				// read tokens until closing brace
 				while (*token_array_idx < token_array->length 
 						&& token_array->token[*token_array_idx].type != CLOSE_BRACE)
 				{
 					tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);
 				}
+
+				// add closing brace (if present and not at end of file)
+				if (*token_array_idx < token_array->length
+						&& token_array->token[*token_array_idx].type == CLOSE_BRACE)
+				{
+					tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);
+					contains_end_statement = true;
+					goto endstatement;
+				}
 				break;
 			}
 
-			// stop parsing after ';' in variable or '}' in function
+			// stop parsing after ';' in variable definition
 			case END_STATEMENT:
-			case CLOSE_BRACE:
 			{
 				contains_end_statement = true;
 				goto endstatement;

@@ -1,0 +1,7 @@
+int32 sum(int32 x, int32 y)
+{
+	int32 z = x + y;
+	int32 w = z - 12;
+	
+	return w;
+}
