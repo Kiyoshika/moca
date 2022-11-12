@@ -22,6 +22,7 @@ bool parse_definition(
 		size_t* token_array_idx,
 		struct token_array_t* token_buffer,
 		enum parse_definition_type* definition_type,
+		bool allow_defining_functions,
 		struct err_msg_t* err);
 
 #endif

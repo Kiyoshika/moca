@@ -12,6 +12,7 @@ You can think of this being a stripped version of C as its base with some featur
 * Lambdas
 * Namespaces
 * Named Parameters (custom feature)
+* Default parameter values
 
 # Language Design
 **NOTE:** This is still early design and syntax/functionality may be changed or even removed from the final cut.

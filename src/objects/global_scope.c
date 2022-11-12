@@ -36,9 +36,16 @@ bool gscope_add_function(
 		struct err_msg_t* err)
 {
 	memcpy(
-			&global_scope->functions[global_scope->n_functions++],
+			&global_scope->functions[global_scope->n_functions],
 			function,
 			sizeof(struct function_t));
+
+	struct function_t* new_function = &global_scope->functions[global_scope->n_functions];
+
+	new_function->parameters = function->parameters; // transfer ownership
+	new_function->variables = function->variables; // transfer ownership
+
+	global_scope->n_functions++;
 
 	if (global_scope->n_functions == global_scope->function_capacity)
 	{
@@ -91,6 +98,9 @@ bool gscope_add_variable(
 void gscope_free(
 		struct global_scope_t* global_scope)
 {
+	for (size_t i = 0; i < global_scope->n_functions; ++i)
+		function_free(&global_scope->functions[i]);
+
 	free(global_scope->functions);
 	global_scope->functions = NULL;
 

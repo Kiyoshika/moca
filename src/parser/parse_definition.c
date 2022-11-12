@@ -7,6 +7,7 @@ bool parse_definition(
 		size_t* token_array_idx,
 		struct token_array_t* token_buffer,
 		enum parse_definition_type* definition_type,
+		bool allow_defining_functions,
 		struct err_msg_t* err)
 {
 	bool contains_end_statement = false;
@@ -67,6 +68,14 @@ bool parse_definition(
 			}
 			case OPEN_PAREN:
 			{
+				if (!allow_defining_functions)
+				{
+					err_write(err, "Cannot define a function here.", 
+							token_array->token[*token_array_idx].line_num,
+							token_array->token[*token_array_idx].char_pos);
+					return false;
+				}
+
 				// text followed by open parenthesis indicates we
 				// are creating a function
 				*definition_type = FUNCTION;

@@ -16,7 +16,7 @@ struct function_t;
 // returns true on success, returns false otherwise and writes to [err].
 bool parser_create_global_variable(
 		struct global_scope_t* global_scope,
-		struct token_array_t* token_array,
+		struct token_array_t* token_buffer,
 		struct err_msg_t* err);
 
 // take a token buffer representing the definition of a variable and
@@ -24,7 +24,7 @@ bool parser_create_global_variable(
 // returns true on success, returns false otherwise and writes to [err].
 bool parser_create_local_variable(
 		struct function_t* function_scope,
-		struct token_array_t* token_array,
+		struct token_array_t* token_buffer,
 		struct err_msg_t* err);
 
 #endif

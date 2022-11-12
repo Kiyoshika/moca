@@ -27,7 +27,7 @@ int main()
 
 	if (!parsed)
 	{
-		const char* expected_msg = "Missing end statement (semicolon).";
+		const char* expected_msg = "Missing semicolon.";
 
 		if (strcmp(expected_msg, err.msg) != 0)
 		{
@@ -48,7 +48,7 @@ int main()
 			testval = 0;
 	}
 	else
-		fprintf(stderr, "Was expecting a 'missing end statement' error but parser didn't identify it.\n");
+		fprintf(stderr, "Was expecting a 'Missing semicolon.' error but parser didn't identify it.\n");
 
 	return testval;
 }

@@ -31,5 +31,7 @@ int main()
 		testval = -1;
 	}
 
+	gscope_free(&global_scope);
+
 	return testval;
 }
