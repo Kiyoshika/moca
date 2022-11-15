@@ -1,4 +1,5 @@
 #include "parser_create_function.h"
+#include "parser_create_variable.h"
 #include "parse_definition.h"
 #include "token_array.h"
 #include "err_msg.h"
@@ -93,14 +94,7 @@ bool _extract_variable_definition(
 		struct token_array_t* function_buffer,
 		struct err_msg_t* err)
 {
-	// TODO: add local varialbes to function stack
-	printf("\n\nLOCAL FUNCTION BUFFER:\n");
-	for (size_t i = 0; i < function_buffer->length; ++i)
-		printf("%s\n", function_buffer->token[i].text);
-
-	tkn_array_clear(function_buffer);
-
-	return true;
+	return parser_create_local_variable(function, function_buffer, err);
 }
 
 // declaration: int32 func(int32 x, int32 y);
@@ -199,9 +193,12 @@ bool parser_create_function(
 	}
 
 endparse:
-	success = gscope_add_function(global_scope, &function, err);
 	if (!success)
+	{
+		tkn_array_free(&function_buffer);
 		return false;
+	}
+	success = gscope_add_function(global_scope, &function, err);
 	tkn_array_free(&function_buffer);
 	return success;
 }

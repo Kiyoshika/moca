@@ -104,8 +104,7 @@ bool function_add_variable(
 		const struct variable_t* variable,
 		struct err_msg_t* err)
 {
-	memcpy(function->variables, variable, sizeof(struct variable_t));
-	function->n_variables++;
+	memcpy(&function->variables[function->n_variables++], variable, sizeof(struct variable_t));
 
 	if (function->n_variables == function->variables_capacity)
 	{

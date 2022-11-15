@@ -15,7 +15,9 @@ void variable_create(
 
 	variable->is_initialized = false;
 
-	variable->is_signed = false;
+	// signed variables are probably more common, so we'll make
+	// that the default
+	variable->is_signed = true;
 
 }
 
