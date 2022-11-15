@@ -12,6 +12,7 @@ You can think of this being a stripped version of C as its base with some featur
 * Lambdas
 * Namespaces
 * Named Parameters (custom feature)
+* Default parameter values
 
 # Language Design
 **NOTE:** This is still early design and syntax/functionality may be changed or even removed from the final cut.
@@ -209,6 +210,9 @@ TODO: expand on some of the other features mentioned: lambdas, namespaces, etc.
 * `make`
 
 Will add steps on how to compile `moca` code once the actual compiler is written and functional to some degree.
+
+# CTags
+This project (optionally) uses ctags, use `make tags` from the project root to generate the tags file and be sure to set `set tags=./tags;$HOME` in your `~/.vimrc`.
 
 # Tests
 I'm not using a testing library so all the tests are "hand-crafted". Inside the `test/` directory in your build folder you can use:

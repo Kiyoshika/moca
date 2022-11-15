@@ -1,0 +1,190 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ADDITION	include/token.h	/^	ADDITION, 			\/\/ +$/;"	e	enum:token_type_e
+ASSIGNMENT	include/token.h	/^	ASSIGNMENT, 		\/\/ =$/;"	e	enum:token_type_e
+CATEGORY_UNASSIGNED	include/token.h	/^	CATEGORY_UNASSIGNED = -1,$/;"	e	enum:token_category_e
+CLOSE_BRACE	include/token.h	/^	CLOSE_BRACE, 		\/\/ }$/;"	e	enum:token_type_e
+CLOSE_PAREN	include/token.h	/^	CLOSE_PAREN, 		\/\/ )$/;"	e	enum:token_type_e
+DATATYPE	include/token.h	/^	DATATYPE, \/\/ int32, int64, double, etc.$/;"	e	enum:token_category_e
+DECREMENT	include/token.h	/^	DECREMENT,			\/\/ --$/;"	e	enum:token_type_e
+DIVISION	include/token.h	/^	DIVISION, 			\/\/ \/$/;"	e	enum:token_type_e
+END_STATEMENT	include/token.h	/^	END_STATEMENT,		\/\/ ;$/;"	e	enum:token_type_e
+EQUAL	include/token.h	/^	EQUAL,				\/\/ ==$/;"	e	enum:token_type_e
+ERR_MSG_H	include/err_msg.h	2;"	d
+FUNCTION	include/parser/parser.h	/^	FUNCTION$/;"	e	enum:parse_definition_type
+FUNCTIONS_H	include/objects/functions.h	2;"	d
+GLOBAL_SCOPE_H	include/objects/global_scope.h	2;"	d
+GREATER_THAN	include/token.h	/^	GREATER_THAN,		\/\/ >$/;"	e	enum:token_type_e
+GREATER_THAN_EQ	include/token.h	/^	GREATER_THAN_EQ,	\/\/ >=$/;"	e	enum:token_type_e
+INCREMENT	include/token.h	/^	INCREMENT,			\/\/ ++$/;"	e	enum:token_type_e
+INT16	include/token.h	/^	INT16,$/;"	e	enum:token_type_e
+INT32	include/token.h	/^	INT32,$/;"	e	enum:token_type_e
+INT64	include/token.h	/^	INT64,$/;"	e	enum:token_type_e
+INT8	include/token.h	/^	INT8,$/;"	e	enum:token_type_e
+LESS_THAN	include/token.h	/^	LESS_THAN,			\/\/ <$/;"	e	enum:token_type_e
+LESS_THAN_EQ	include/token.h	/^	LESS_THAN_EQ,		\/\/ <=$/;"	e	enum:token_type_e
+LEXER_H	include/lexer.h	2;"	d
+LOGICAL	include/token.h	/^	LOGICAL, \/\/ >, <, !=, etc.$/;"	e	enum:token_category_e
+LOGICAL_AND	include/token.h	/^	LOGICAL_AND,		\/\/ &&$/;"	e	enum:token_type_e
+LOGICAL_OR	include/token.h	/^	LOGICAL_OR,			\/\/ ||$/;"	e	enum:token_type_e
+MAX_LINE_LEN	include/source_buffer.h	10;"	d
+MAX_TOKEN_LIST_LEN	include/token.h	9;"	d
+MINUS_EQUALS	include/token.h	/^	MINUS_EQUALS,		\/\/ -=$/;"	e	enum:token_type_e
+MODULO	include/token.h	/^	MODULO, 			\/\/ %$/;"	e	enum:token_type_e
+MULTIPLICATION	include/token.h	/^	MULTIPLICATION, 	\/\/ *$/;"	e	enum:token_type_e
+NONE	include/token.h	/^	NONE = -2$/;"	e	enum:token_category_e
+NOT_EQUAL	include/token.h	/^	NOT_EQUAL,			\/\/ !=$/;"	e	enum:token_type_e
+NUMBER	include/token.h	/^	NUMBER = -2,$/;"	e	enum:token_type_e
+N_TESTS	test/tokenizer/assignment.c	8;"	d	file:
+N_TESTS	test/tokenizer/doubleoperators.c	8;"	d	file:
+N_TESTS	test/tokenizer/forloops.c	8;"	d	file:
+N_TESTS	test/tokenizer/functions.c	29;"	d	file:
+N_TESTS	test/tokenizer/functions.c	30;"	d	file:
+N_TESTS	test/tokenizer/functions.c	8;"	d	file:
+N_TESTS	test/tokenizer/ifstatement.c	8;"	d	file:
+N_TESTS	test/tokenizer/logicals.c	8;"	d	file:
+N_TESTS	test/tokenizer/singleoperators.c	8;"	d	file:
+N_TEST_TOKENS	test/lexer/lexer_logicals.c	8;"	d	file:
+N_TEST_TOKENS	test/lexer/lexer_operators.c	8;"	d	file:
+N_TEST_TOKENS	test/lexer/lexer_symbols.c	8;"	d	file:
+N_TEST_TOKENS	test/lexer/lexer_textandnumeric.c	8;"	d	file:
+N_TEST_TOKENS	test/tokenizer/assignment.c	7;"	d	file:
+N_TEST_TOKENS	test/tokenizer/doubleoperators.c	7;"	d	file:
+N_TEST_TOKENS	test/tokenizer/forloops.c	7;"	d	file:
+N_TEST_TOKENS	test/tokenizer/functions.c	20;"	d	file:
+N_TEST_TOKENS	test/tokenizer/functions.c	21;"	d	file:
+N_TEST_TOKENS	test/tokenizer/functions.c	26;"	d	file:
+N_TEST_TOKENS	test/tokenizer/functions.c	27;"	d	file:
+N_TEST_TOKENS	test/tokenizer/functions.c	7;"	d	file:
+N_TEST_TOKENS	test/tokenizer/ifstatement.c	7;"	d	file:
+N_TEST_TOKENS	test/tokenizer/logicals.c	7;"	d	file:
+N_TEST_TOKENS	test/tokenizer/singleoperators.c	7;"	d	file:
+N_TOKENS	include/token.h	8;"	d
+OPEN_BRACE	include/token.h	/^	OPEN_BRACE, 		\/\/ {$/;"	e	enum:token_type_e
+OPEN_PAREN	include/token.h	/^	OPEN_PAREN, 		\/\/ ($/;"	e	enum:token_type_e
+OPERATOR	include/token.h	/^	OPERATOR, \/\/ +, -, \/, *, %, =$/;"	e	enum:token_category_e
+PARAMETERS_H	include/objects/parameters.h	2;"	d
+PARSER_CREATE_VARIABLE_H	include/parser/parser_create_variable.h	2;"	d
+PARSER_H	include/parser/parser.h	2;"	d
+PARSE_DEFINITION_H	include/parser/parse_definition.h	2;"	d
+PLUS_EQUALS	include/token.h	/^	PLUS_EQUALS, 		\/\/ +=$/;"	e	enum:token_type_e
+SOURCE_BUFFER_H	include/source_buffer.h	2;"	d
+SUBTRACTION	include/token.h	/^	SUBTRACTION, 		\/\/ -$/;"	e	enum:token_type_e
+TEXT	include/token.h	/^	TEXT = -1,$/;"	e	enum:token_type_e
+TOKENIZER_H	include/tokenizer.h	2;"	d
+TOKEN_ARRAY_H	include/token_array.h	2;"	d
+TOKEN_H	include/token.h	2;"	d
+TYPE_UNASSIGNED	include/token.h	/^	TYPE_UNASSIGNED = -3$/;"	e	enum:token_type_e
+VARIABLE	include/parser/parser.h	/^	VARIABLE,$/;"	e	enum:parse_definition_type
+VARIABLES_H	include/objects/variables.h	2;"	d
+VARIABLE_NAME_LEN	include/objects/variables.h	11;"	d
+bytes_size	include/objects/variables.h	/^	size_t bytes_size; \/\/ 1, 2, 4, 8$/;"	m	struct:variable_t
+capacity	include/token_array.h	/^	size_t capacity; \/\/ total POSSIBLE number of tokens$/;"	m	struct:token_array_t
+category	include/token.h	/^	enum token_category_e category; \/\/ higher level token type category that lexer assigns to a given token$/;"	m	struct:token_t	typeref:enum:token_t::token_category_e
+category_to_text	src/token.c	/^char* category_to_text(enum token_category_e category)$/;"	f
+char_pos	include/err_msg.h	/^	size_t char_pos;$/;"	m	struct:err_msg_t
+char_pos	include/token.h	/^	size_t char_pos; 	\/\/ character position on a given line number (line_num) [0-60]$/;"	m	struct:token_t
+cmp	src/lexer.c	/^static int cmp(const void* a, const void* b)$/;"	f	file:
+current_var	test/parser/variables/create_global_variables.c	/^size_t current_var = 1;$/;"	v
+err_msg_t	include/err_msg.h	/^struct err_msg_t$/;"	s
+err_print	src/err_msg.c	/^void err_print($/;"	f
+err_write	src/err_msg.c	/^void err_write($/;"	f
+failed_to_parse	src/objects/variables.c	/^static bool failed_to_parse($/;"	f	file:
+function_capacity	include/objects/global_scope.h	/^	size_t function_capacity;$/;"	m	struct:global_scope_t
+function_t	include/objects/functions.h	/^struct function_t$/;"	s
+functions	include/objects/global_scope.h	/^	struct function_t* functions; \/\/ all functions live in global scope$/;"	m	struct:global_scope_t	typeref:struct:global_scope_t::function_t
+global_scope_t	include/objects/global_scope.h	/^struct global_scope_t$/;"	s
+gscope_add_function	src/objects/global_scope.c	/^bool gscope_add_function($/;"	f
+gscope_add_variable	src/objects/global_scope.c	/^bool gscope_add_variable($/;"	f
+gscope_create	src/objects/global_scope.c	/^bool gscope_create($/;"	f
+gscope_free	src/objects/global_scope.c	/^void gscope_free($/;"	f
+ignore_char	src/tokenizer_internal.c	/^static bool ignore_char(const char char_value)$/;"	f	file:
+is_double_token	src/tokenizer_internal.c	/^static bool is_double_token(const char current_char, const char next_char)$/;"	f	file:
+is_initialized	include/objects/variables.h	/^	bool is_initialized;$/;"	m	struct:variable_t
+is_not_decimal	src/tokenizer_internal.c	/^static bool is_not_decimal($/;"	f	file:
+is_reference	include/objects/parameters.h	/^	bool is_reference; \/\/ &x vs x$/;"	m	struct:parameter_t
+is_signed	include/objects/variables.h	/^	bool is_signed; \/\/ UINT8 vs INT8, etc.$/;"	m	struct:variable_t
+is_tokenize_char	src/tokenizer_internal.c	/^static inline bool is_tokenize_char(const char tokenize_char)$/;"	f	file:
+length	include/token_array.h	/^	size_t length; \/\/ current number of tokens in array$/;"	m	struct:token_array_t
+lexer_parse	src/lexer.c	/^void lexer_parse($/;"	f
+line	include/source_buffer.h	/^	char (*line)[MAX_LINE_LEN];$/;"	m	struct:source_buffer_t
+line_num	include/err_msg.h	/^	size_t line_num;$/;"	m	struct:err_msg_t
+line_num	include/token.h	/^	size_t line_num; 	\/\/ line number token appears on; ranges from [1-inf]$/;"	m	struct:token_t
+main	test/lexer/lexer_logicals.c	/^int main()$/;"	f
+main	test/lexer/lexer_operators.c	/^int main()$/;"	f
+main	test/lexer/lexer_symbols.c	/^int main()$/;"	f
+main	test/lexer/lexer_textandnumeric.c	/^int main()$/;"	f
+main	test/objects/variables/variable_types.c	/^int main()$/;"	f
+main	test/parser/definitions/function_declaration.c	/^int main()$/;"	f
+main	test/parser/definitions/missing_end_statement.c	/^int main()$/;"	f
+main	test/parser/definitions/variable_declaration.c	/^int main()$/;"	f
+main	test/parser/definitions/variable_definition.c	/^int main()$/;"	f
+main	test/parser/variables/create_global_variables.c	/^int main()$/;"	f
+main	test/tokenizer/assignment.c	/^int main()$/;"	f
+main	test/tokenizer/doubleoperators.c	/^int main()$/;"	f
+main	test/tokenizer/forloops.c	/^int main()$/;"	f
+main	test/tokenizer/functions.c	/^int main()$/;"	f
+main	test/tokenizer/ifstatement.c	/^int main()$/;"	f
+main	test/tokenizer/logicals.c	/^int main()$/;"	f
+main	test/tokenizer/singleoperators.c	/^int main()$/;"	f
+msg	include/err_msg.h	/^	char msg[501];$/;"	m	struct:err_msg_t
+msg_len	include/err_msg.h	/^	size_t msg_len;$/;"	m	struct:err_msg_t
+n_functions	include/objects/global_scope.h	/^	size_t n_functions;$/;"	m	struct:global_scope_t
+n_lines	include/source_buffer.h	/^	size_t n_lines;$/;"	m	struct:source_buffer_t
+n_parameters	include/objects/functions.h	/^	size_t n_parameters;$/;"	m	struct:function_t
+n_variables	include/objects/functions.h	/^	size_t n_variables;$/;"	m	struct:function_t
+n_variables	include/objects/global_scope.h	/^	size_t n_variables;$/;"	m	struct:global_scope_t
+name	include/objects/functions.h	/^	char name[51];$/;"	m	struct:function_t
+name	include/objects/variables.h	/^	char name[VARIABLE_NAME_LEN];$/;"	m	struct:variable_t
+parameter_t	include/objects/parameters.h	/^struct parameter_t$/;"	s
+parameters	include/objects/functions.h	/^	struct parameter_t* parameters; \/\/ function parameters$/;"	m	struct:function_t	typeref:struct:function_t::parameter_t
+parse_definition	src/parser/parse_definition.c	/^bool parse_definition($/;"	f
+parse_definition_type	include/parser/parser.h	/^enum parse_definition_type$/;"	g
+parse_tokens	src/parser/parser.c	/^bool parse_tokens($/;"	f
+parser_create_global_variable	src/parser/parser_create_variable.c	/^bool parser_create_global_variable($/;"	f
+parser_create_local_variable	src/parser/parser_create_variable.c	/^bool parser_create_local_variable($/;"	f
+push_into_token_array	src/tokenizer_internal.c	/^static void push_into_token_array($/;"	f	file:
+return_type	include/objects/functions.h	/^	enum token_type_e return_type;$/;"	m	struct:function_t	typeref:enum:function_t::token_type_e
+set_and_return_error	src/parser/parser_create_variable.c	/^static bool set_and_return_error($/;"	f	file:
+source_buffer_t	include/source_buffer.h	/^struct source_buffer_t$/;"	s
+srcbuffer_free	src/source_buffer.c	/^void srcbuffer_free($/;"	f
+srcbuffer_read	src/source_buffer.c	/^bool srcbuffer_read($/;"	f
+test_tokens	test/tokenizer/test_tokens.c	/^int test_tokens($/;"	f
+text	include/token.h	/^	char text[61]; 		\/\/ text content of the token$/;"	m	struct:token_t
+text_len	include/token.h	/^	size_t text_len;	\/\/ length of the text of the token$/;"	m	struct:token_t
+tkn_array_clear	src/token_array.c	/^void tkn_array_clear($/;"	f
+tkn_array_create	src/token_array.c	/^bool tkn_array_create($/;"	f
+tkn_array_free	src/token_array.c	/^void tkn_array_free($/;"	f
+tkn_array_push	src/token_array.c	/^bool tkn_array_push($/;"	f
+tkn_create	src/token.c	/^void tkn_create($/;"	f
+tknzer_extract_tokens	src/tokenizer.c	/^void tknzer_extract_tokens($/;"	f
+token	include/token_array.h	/^	struct token_t* token;$/;"	m	struct:token_array_t	typeref:struct:token_array_t::token_t
+token_array_t	include/token_array.h	/^struct token_array_t$/;"	s
+token_category_e	include/token.h	/^enum token_category_e$/;"	g
+token_is_expected	src/parser/parser_internal.c	/^bool token_is_expected($/;"	f
+token_list	src/token.c	/^char token_list[N_TOKENS][MAX_TOKEN_LIST_LEN] = {$/;"	v
+token_t	include/token.h	/^struct token_t$/;"	s
+token_type_e	include/token.h	/^enum token_type_e$/;"	g
+type	include/objects/variables.h	/^	enum token_type_e type; \/\/ INT8, INT32, etc.$/;"	m	struct:variable_t	typeref:enum:variable_t::token_type_e
+type	include/token.h	/^	enum token_type_e type; \/\/ primary type that lexer assigns to a given token$/;"	m	struct:token_t	typeref:enum:token_t::token_type_e
+type_to_text	src/token.c	/^char* type_to_text(enum token_type_e type)$/;"	f
+validate_type	test/objects/variables/variable_types.c	/^int validate_type($/;"	f
+validate_variable	test/parser/variables/create_global_variables.c	/^static int validate_variable($/;"	f	file:
+value	include/objects/variables.h	/^	void* value;$/;"	m	struct:variable_t
+value_bytes_size	include/objects/variables.h	/^	size_t value_bytes_size;$/;"	m	struct:variable_t
+variable	include/objects/parameters.h	/^	struct variable_t variable;$/;"	m	struct:parameter_t	typeref:struct:parameter_t::variable_t
+variable_capacity	include/objects/global_scope.h	/^	size_t variable_capacity;$/;"	m	struct:global_scope_t
+variable_create	src/objects/variables.c	/^void variable_create($/;"	f
+variable_free	src/objects/variables.c	/^void variable_free($/;"	f
+variable_set_initialized	src/objects/variables.c	/^void variable_set_initialized($/;"	f
+variable_set_name	src/objects/variables.c	/^bool variable_set_name($/;"	f
+variable_set_signed	src/objects/variables.c	/^void variable_set_signed($/;"	f
+variable_set_type	src/objects/variables.c	/^bool variable_set_type($/;"	f
+variable_set_value	src/objects/variables.c	/^bool variable_set_value($/;"	f
+variable_t	include/objects/variables.h	/^struct variable_t$/;"	s
+variables	include/objects/functions.h	/^	struct variable_t* variables; \/\/ local variables in function stack$/;"	m	struct:function_t	typeref:struct:function_t::variable_t
+variables	include/objects/global_scope.h	/^	struct variable_t* variables; \/\/ global varaibles defined outside functions$/;"	m	struct:global_scope_t	typeref:struct:global_scope_t::variable_t

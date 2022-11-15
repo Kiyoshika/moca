@@ -4,6 +4,7 @@
 #include "parse_definition.h"
 #include "global_scope.h"
 #include "parser_create_variable.h"
+#include "parser_create_function.h"
 #include "functions.h"
 
 bool parse_tokens(
@@ -55,6 +56,7 @@ bool parse_tokens(
 						&token_array_idx,
 						&token_buffer,
 						&definition_type,
+						true, // allow defining functions
 						err);
 
 				if (!parse_success)
@@ -72,7 +74,10 @@ bool parse_tokens(
 						break;
 
 					case FUNCTION:
-						// TODO: construct function and add it to global scope
+						parse_success = parser_create_function(global_scope, &token_buffer, err);
+						if (!parse_success)
+							goto endparse;
+						token_array_idx--;
 						break;
 
 					default:
@@ -85,6 +90,8 @@ bool parse_tokens(
 			default:
 				break;				
 		}
+
+		tkn_array_clear(&token_buffer);
 	}
 
 endparse:

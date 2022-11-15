@@ -1,1 +1,2 @@
 int32 func();
+int32 func2(int32 x, int32 y);

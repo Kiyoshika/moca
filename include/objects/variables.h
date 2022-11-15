@@ -15,7 +15,7 @@ struct err_msg_t;
 
 struct variable_t
 {
-	void* value;
+	char* value;
 	size_t value_bytes_size;
 
 	enum token_type_e type; // INT8, INT32, etc.
@@ -60,7 +60,6 @@ void variable_set_signed(
 bool variable_set_value(
 		struct variable_t* variable,
 		char* value,
-		bool is_negative,
 		struct err_msg_t* err);
 
 // deallocate memory from variable->value (if set)
