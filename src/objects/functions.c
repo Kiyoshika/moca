@@ -31,6 +31,30 @@ bool function_create(
 
 	function->is_defined = false;
 
+	function->n_instructions = 0;
+	function->instruction_capacity = 10;
+
+	function->instruction_code = malloc(function->instruction_capacity * sizeof(enum instruction_code_e));
+	if (!function->instruction_code)
+	{
+		err_write(err, "Couldn't allocate memory for new function.", 0, 0);
+		return false;
+	}
+
+	function->instruction_arg1 = malloc(function->instruction_capacity * sizeof(*function->instruction_arg1));
+	if (!function->instruction_arg1)
+	{
+		err_write(err, "Couldn't allocate memory for new function.", 0, 0);
+		return false;
+	}
+
+	function->instruction_arg2 = malloc(function->instruction_capacity * sizeof(*function->instruction_arg2));
+	if (!function->instruction_arg2)
+	{
+		err_write(err, "Couldn't allocate memory for new function.", 0, 0);
+		return false;
+	}
+
 	return true;
 }
 
@@ -121,6 +145,59 @@ bool function_add_variable(
 	return true;
 }
 
+bool function_write_instruction(
+		struct function_t* function,
+		const enum instruction_code_e instruction_code,
+		const char* instruction_arg1,
+		const char* instruction_arg2,
+		struct err_msg_t* err)
+{
+	function->instruction_code[function->n_instructions] = instruction_code;
+
+	size_t len = strlen(instruction_arg1);
+	size_t write_len = len > 50 ? 50 : len;
+	memcpy(function->instruction_arg1[function->n_instructions], instruction_arg1, write_len);
+	function->instruction_arg1[function->n_instructions][write_len] = '\0';
+
+	len = strlen(instruction_arg2);
+	write_len = len > 50 ? 50 : len;
+	memcpy(function->instruction_arg2[function->n_instructions], instruction_arg2, write_len);
+	function->instruction_arg2[function->n_instructions][write_len] = '\0';
+
+	function->n_instructions++;
+
+	if (function->n_instructions == function->instruction_capacity)
+	{
+		void* alloc = realloc(function->instruction_code, function->instruction_capacity * 2 * sizeof(enum instruction_code_e));
+		if (!alloc)
+		{
+			err_write(err, "Couldn't allocate more memory for function.", 0, 0);
+			return false;
+		}
+		function->instruction_code = alloc;
+
+		alloc = realloc(function->instruction_arg1, function->instruction_capacity * 2 * sizeof(*function->instruction_arg1));
+		if (!alloc)
+		{
+			err_write(err, "Couldn't allocate more memory for function.", 0, 0);
+			return false;
+		}
+		function->instruction_arg1 = alloc;
+
+		alloc = realloc(function->instruction_arg2, function->instruction_capacity * 2 * sizeof(*function->instruction_arg2));
+		if (!alloc)
+		{
+			err_write(err, "Couldn't allocate more memory for function.", 0, 0);
+			return false;
+		}
+		function->instruction_arg2 = alloc;
+
+		function->instruction_capacity *= 2;
+	}
+
+	return true;
+}
+
 void function_free(
 		struct function_t* function)
 {
@@ -135,4 +212,13 @@ void function_free(
 	function->variables_capacity = 0;
 
 	function->is_defined = false;
+
+	free(function->instruction_code);
+	function->instruction_code = NULL;
+
+	free(function->instruction_arg1);
+	function->instruction_arg1 = NULL;
+
+	free(function->instruction_arg2);
+	function->instruction_arg2 = NULL;
 }

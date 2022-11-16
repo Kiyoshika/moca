@@ -63,4 +63,5 @@ target_include_directories(mocaerr
 
 add_subdirectory(parser)
 add_subdirectory(objects)
-
+add_subdirectory(asm)
+add_subdirectory(frontend)

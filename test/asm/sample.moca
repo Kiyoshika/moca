@@ -1,0 +1,14 @@
+int32 somefunc(int32 x, int32 y)
+{
+	int32 a = 3;
+	int32 b;
+
+	return 12;
+}
+
+int32 main()
+{
+	int32 a = 12;
+
+	return 0;
+}
