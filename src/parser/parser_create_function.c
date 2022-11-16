@@ -183,6 +183,12 @@ bool parser_create_function(
 				if (!success)
 					goto endparse;
 
+				// add instruction to initialize a variable to certain value
+				const struct variable_t* variable = &function.variables[function.n_variables - 1];
+				success = function_write_instruction(&function, INIT_VAR, variable->name, variable->value, err);
+				if (!success)
+					goto endparse;
+
 				break;
 			}
 

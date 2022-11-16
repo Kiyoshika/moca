@@ -15,6 +15,11 @@ struct variable_t;
 struct parameter_t;
 struct err_msg_t;
 
+enum instruction_code_e
+{
+	INIT_VAR // intialize variable
+};
+
 struct function_t
 {
 	char name[FUNCTION_NAME_LEN];
@@ -30,6 +35,13 @@ struct function_t
 	size_t variables_capacity;
 
 	bool is_defined; // if function is defined or only declared
+
+	// handing instructions to translate to assembly
+	size_t n_instructions;
+	size_t instruction_capacity;
+	enum instruction_code_e* instruction_code;
+	char (*instruction_arg1)[51];
+	char (*instruction_arg2)[51];
 };
 
 // pass a stack-allocated function_t to initalize its members.
@@ -64,6 +76,14 @@ bool function_add_parameter(
 bool function_add_variable(
 		struct function_t* function,
 		const struct variable_t* variable,
+		struct err_msg_t* err);
+
+// write an instruction to the function which will be translated into assembly
+bool function_write_instruction(
+		struct function_t* function,
+		const enum instruction_code_e instruction_code,
+		const char* instruction_arg1,
+		const char* instruction_arg2,
 		struct err_msg_t* err);
 
 void function_free(
