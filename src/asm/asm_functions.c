@@ -73,7 +73,7 @@ static void _asm_function_write_instructions(
 						memcpy(mov_text, "movb\0", 5);
 						break;
 					case 2:
-						memcpy(mov_text, "movs\0", 5);
+						memcpy(mov_text, "movw\0", 5);
 						break;
 					case 4:
 						memcpy(mov_text, "movl\0", 5);
