@@ -33,7 +33,7 @@ int main()
 	parse_tokens(&token_array, &global_scope, &err);
 
 	asm_create_text_section(asm_file);
-	asm_function_create(asm_file, &global_scope);
+	asm_function_create(asm_file, &global_scope, &err);
 
 	srcbuffer_free(&srcbuffer);
 	tkn_array_free(&token_array);
