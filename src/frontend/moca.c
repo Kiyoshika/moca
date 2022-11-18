@@ -80,7 +80,10 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	asm_create_text_section(asm_file);
-	asm_function_create(asm_file, &global_scope);
+	bool success = asm_function_create(asm_file, &global_scope, &err);
+	// print error and cleanup
+	if (!success)
+		err_print(&err);
 	asm_close_file(asm_file);
 
 // cleanup memory even if parsing failed
