@@ -91,6 +91,26 @@ static bool _asm_function_write_instructions(
 						break;
 				}
 
+					// break this into its own function, I'm just lazy right now
+					char variable_register_text[5];
+					switch (variable_bytes_size)
+					{
+						case 1:
+							memcpy(variable_register_text, "%bl\0", 4); // use lower half of B register for 8bit
+							break;
+						case 2:
+							memcpy(variable_register_text, "%bx\0", 4);
+							break;
+						case 4:
+							memcpy(variable_register_text, "%ebx\0", 5);
+							break;
+						case 8:
+							memcpy(variable_register_text, "%rax\0", 5);
+							break;
+						default:
+							break;
+					}
+
 				// this is the stack position of the variable's value
 				// we're assigning (e.g., int32 x = [y] <--).
 				// We will need to move this into a temp register (say, %rbx)
@@ -132,20 +152,20 @@ static bool _asm_function_write_instructions(
 					}
 
 					// TODO: break this into its own function
-					char temp_register_text[5];
+					char variable_assign_register_text[5];
 					switch (variable_assign_bytes_size)
 					{
 						case 1:
-							memcpy(temp_register_text, "%bl\0", 4); // use lower half of B register for 8bit
+							memcpy(variable_assign_register_text, "%bl\0", 4); // use lower half of B register for 8bit
 							break;
 						case 2:
-							memcpy(temp_register_text, "%bx\0", 4);
+							memcpy(variable_assign_register_text, "%bx\0", 4);
 							break;
 						case 4:
-							memcpy(temp_register_text, "%ebx\0", 5);
+							memcpy(variable_assign_register_text, "%ebx\0", 5);
 							break;
 						case 8:
-							memcpy(temp_register_text, "%rax\0", 5);
+							memcpy(variable_assign_register_text, "%rax\0", 5);
 							break;
 					}
 
@@ -153,7 +173,7 @@ static bool _asm_function_write_instructions(
 					// e.g., movq -12(%rbp), %rbx
 					fprintf(asm_file, "\t%s%s%zu%s%s\n",
 							assign_mov_text, " -", variable_assign_stack_position,
-							"(%rbp), ", temp_register_text);
+							"(%rbp), ", variable_assign_register_text);
 
 					// move temp register into variable stack position
 					// (the one we're assigning to, i.e., int32 [x] = y)
@@ -161,7 +181,7 @@ static bool _asm_function_write_instructions(
 					// NOTE: we use the size of the left-hand variable, which may be larger
 					// or smaller than the right-hand variable
 					fprintf(asm_file, "\t%s%s%s%s%zu%s\n",
-							assign_mov_text, " ", temp_register_text, ", -", variable_stack_position, "(%rbp)");
+							mov_text, " ", variable_register_text, ", -", variable_stack_position, "(%rbp)");
 				}
 				else
 				{
