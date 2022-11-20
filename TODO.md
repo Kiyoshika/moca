@@ -3,6 +3,7 @@
 
 * BUG: underscores break variable names
 * BUG: commas break strings
+* Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.
 * Update tests for parser_definition to check the correct `definition_type` enum (VARIABLE or FUNCTION)
 * Add global variables to data section (if initialized) or bss section (if uninitialized)
 	* This currently works for strings, but not integer types
