@@ -43,7 +43,7 @@ static int validate_variable(
 int main()
 {
 	struct source_buffer_t srcbuffer;
-	srcbuffer_read("./create_global_variables.moca", &srcbuffer);
+	srcbuffer_read("./strings.moca", &srcbuffer);
 
 	struct token_array_t token_array;
 	tknzer_extract_tokens(&token_array, &srcbuffer);
@@ -67,11 +67,8 @@ int main()
 
 	struct variable_t* variable = &global_scope.variables[0];
 	int valid;
-	valid = validate_variable(variable, INT8, 1, "12");
-	testval = valid == -1 ? -1 : testval;
-
-	variable = &global_scope.variables[1];
-	valid = validate_variable(variable, INT8, 1, "-12");
+	char* expected_str = "\"some string with some text\"";
+	valid = validate_variable(variable, STRING, strlen(expected_str), expected_str);
 	testval = valid == -1 ? -1 : testval;
 
 	gscope_free(&global_scope);

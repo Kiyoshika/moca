@@ -27,7 +27,7 @@ static bool ignore_char(const char char_value)
 	switch (char_value)
 	{
 		case '\n':
-		case ' ':
+		//case ' ': (we now tokenize space characters for strings)
 		case '\t':
 			return true;
 		default:

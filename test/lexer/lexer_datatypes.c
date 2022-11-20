@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <stddef.h>
 
-#define N_TEST_TOKENS 7
+#define N_TEST_TOKENS 5
 int main()
 {
 	struct source_buffer_t srcbuffer;
-	srcbuffer_read("./symbols.moca", &srcbuffer);
+	srcbuffer_read("./datatypes.moca", &srcbuffer);
 	
 	struct token_array_t array;
 	tknzer_extract_tokens(
@@ -19,13 +19,11 @@ int main()
 	int testval = 0;
 
 	enum token_type_e expected_types[N_TEST_TOKENS] = {
-		OPEN_PAREN,
-		CLOSE_PAREN,
-		OPEN_BRACE,
-		CLOSE_BRACE,
-		END_STATEMENT,
-		COMMA,
-		DOUBLE_QUOTE
+		INT8,
+		INT16,
+		INT32,
+		INT64,
+		STRING
 	};
 
 	lexer_parse(&array);
@@ -40,7 +38,7 @@ int main()
 			break;
 		}
 
-		if (array.token[i].category != NONE)
+		if (array.token[i].category != DATATYPE)
 		{
 			testval = -1;
 			fprintf(stderr, "Token %zu/%zu: Expected category 'NONE' - got '%s'\n", i+1, (size_t)N_TEST_TOKENS, category_to_text(array.token[i].category));

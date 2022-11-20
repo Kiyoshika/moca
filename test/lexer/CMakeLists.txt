@@ -2,6 +2,7 @@ configure_file(logicals.moca logicals.moca COPYONLY)
 configure_file(operators.moca operators.moca COPYONLY)
 configure_file(textandnumeric.moca textandnumeric.moca COPYONLY)
 configure_file(symbols.moca symbols.moca COPYONLY)
+configure_file(datatypes.moca datatypes.moca COPYONLY)
 
 # LOGICALS
 add_executable(lexer_logicals lexer_logicals.c)
@@ -58,3 +59,18 @@ target_link_libraries(lexer_symbols
 	mocalexer
 )
 add_test(NAME lexer_symbols COMMAND lexer_symbols)
+
+# DATA TYPES
+add_executable(lexer_datatypes lexer_datatypes.c)
+target_include_directories(lexer_datatypes
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+)
+target_link_libraries(lexer_datatypes
+	mocasrcbuffer
+	mocatoken
+	mocatokenizer
+	mocalexer
+)
+add_test(NAME lexer_datatypes COMMAND lexer_datatypes)
+

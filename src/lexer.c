@@ -45,6 +45,7 @@ void lexer_parse(
 				case INT16:
 				case INT32:
 				case INT64:
+				case STRING:
 					token_array->token[i].category = DATATYPE;
 					break;
 

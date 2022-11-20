@@ -46,11 +46,7 @@ bool _extract_parameters(
 			(*token_buffer_idx)++;
 		}
 
-		// NOTE: this is a very hacky solution since I haven't created
-		// the proper COMMA token type...I need to stop being lazy and
-		// implement it
-		else if (token_buffer->token[*token_buffer_idx].type == TEXT
-				&& strncmp(token_buffer->token[*token_buffer_idx].text, ",", 1) != 0)
+		else if (token_buffer->token[*token_buffer_idx].type == TEXT)
 		{
 			success = variable_set_name(
 					&variable,
@@ -63,11 +59,7 @@ bool _extract_parameters(
 			(*token_buffer_idx)++;
 		}
 
-		// TODO: change this to proper COMMA token
-		// when encountering comma, we can create the new variable and add
-		// it to the function
-		else if (token_buffer->token[*token_buffer_idx].type == TEXT
-				&& strncmp(token_buffer->token[*token_buffer_idx].text, ",", 1) == 0)
+		else if (token_buffer->token[*token_buffer_idx].type == COMMA)
 		{
 			parameter_create(&parameter, &variable);
 			function_add_parameter(function, &parameter, err);

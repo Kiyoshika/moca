@@ -11,6 +11,8 @@
 #include "variables.h"
 #include "asm_functions.h"
 #include "asm_file.h"
+#include "asm_sections.h"
+#include "asm_globals.h"
 #include "err_msg.h"
 #include "global_scope.h"
 
@@ -79,11 +81,18 @@ int main(int argc, char** argv)
 		printf("Problem opening file to write assembly.\n");
 		return -1;
 	}
-	asm_create_text_section(asm_file);
+	asm_create_text_section(asm_file); // .section .text
+
 	bool success = asm_function_create(asm_file, &global_scope, &err);
-	// print error and cleanup
 	if (!success)
 		err_print(&err);
+
+	asm_create_data_section(asm_file); // .section .data
+
+	success = asm_write_global_variables(asm_file, &global_scope);
+	if (!success)
+		err_print(&err);
+
 	asm_close_file(asm_file);
 
 // cleanup memory even if parsing failed
