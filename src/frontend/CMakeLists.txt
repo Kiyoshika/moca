@@ -19,4 +19,6 @@ target_link_libraries(moca
 	mocavariable
 	moca-asmfile
 	moca-asmfunction
+	moca-asmsection
+	moca-asmglobal
 )

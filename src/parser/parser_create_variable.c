@@ -6,6 +6,20 @@
 #include "global_scope.h"
 #include "functions.h"
 
+static bool _text_realloc(
+		char** text,
+		size_t* text_capacity)
+{
+	void* alloc = realloc(*text, *text_capacity * 2);
+	if (!alloc)
+		return false;
+
+	*text = alloc;
+	*text_capacity *= 2;
+
+	return true;
+}
+
 static bool _set_and_return_error(
 		struct err_msg_t* err,
 		const struct token_array_t* token_buffer,
@@ -14,6 +28,79 @@ static bool _set_and_return_error(
 	err->line_num = token_buffer->token[token_idx].line_num;
 	err->char_pos = token_buffer->token[token_idx].char_pos;
 	return false;
+}
+
+static char* _get_text_between_quotes(
+		struct token_array_t* token_buffer,
+		size_t* buffer_idx,
+		struct err_msg_t* err)
+{
+	// start off with 100 bytes, but may need to reallocate more depending on how large the string is
+	size_t text_len = 0;
+	size_t text_capacity = 100;
+	char* text = malloc(text_capacity);
+
+	if (!text)
+	{
+		err_write(err, "Couldn't allocate memory for string.", 0, 0);
+		return NULL;
+	}
+
+	memset(text, 0, text_capacity);
+	text[0] = '"'; // start text value with single quote
+	text_len++;
+
+	// iterate everything in between double quotes
+	// NOTE: it's also possible that there is no ending quote which is an error,
+	// we will check for this
+	bool contains_end_quote = false;
+	while (*buffer_idx < token_buffer->length)
+	{
+		if (token_buffer->token[*buffer_idx].type == DOUBLE_QUOTE)
+		{
+			contains_end_quote = true;
+			if (text_len + 2 >= text_capacity)
+			{
+				if (!_text_realloc(&text, &text_capacity))
+				{
+					err_write(err, "Couldn't allocate memory for string.", 0, 0);
+					free(text);
+					return NULL;
+				}
+			}
+			
+			text[text_len++] = '"';
+			text_len++;
+			break;
+		}
+
+		char* new_text = token_buffer->token[*buffer_idx].text;
+		size_t new_text_len = strlen(new_text);
+
+		if (text_len + new_text_len >= text_capacity)
+		{
+			if (!_text_realloc(&text, &text_capacity))
+			{
+				err_write(err, "Couldn't allocate memory for string.", 0, 0);
+				free(text);
+				return NULL;
+			}
+		}
+
+		strncat(text, new_text, new_text_len);
+		text_len += new_text_len;
+
+		(*buffer_idx)++;
+	}
+
+	if (!contains_end_quote)
+	{
+		err_write(err, "Missing end quote for string.", 0, 0);
+		free(text);
+		return NULL;
+	}
+	
+	return text;
 }
 
 static bool _parse_variable(
@@ -43,6 +130,28 @@ static bool _parse_variable(
 	// by the parser, third token is guaranteed to be assignment, so we
 	// can directly read fourth/fifth token as its value
 	variable_set_initialized(new_variable, true);
+
+	// if fourth token is double quote then it's a string
+	if (token_buffer->token[3].type == DOUBLE_QUOTE)
+	{
+		// validate correct data type
+		if (token_buffer->token[0].type != STRING)
+		{
+			err_write(err, "Data type is not a 'string'.", 0, 0);
+			return _set_and_return_error(err, token_buffer, 3);
+		}
+
+		size_t buffer_idx = 4;
+		char* str_value = _get_text_between_quotes(token_buffer, &buffer_idx, err);
+
+		if (!str_value)
+			return _set_and_return_error(err, token_buffer, 3);
+
+		variable_set_value(new_variable, str_value, err);
+		free(str_value);
+
+		return true;
+	}
 
 	// if fourth token is "-" then it's a negative number. 
 	if (token_buffer->token[3].text[0] == '-')

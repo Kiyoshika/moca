@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#define N_TOKENS 29
+#define N_TOKENS 31
 #define MAX_TOKEN_LIST_LEN 10
 
 // ENSURE THIS IS SORTED IN ASCII ORDER ASCENDING
@@ -14,7 +14,9 @@ extern char token_list[N_TOKENS][MAX_TOKEN_LIST_LEN];
 // ENSURE THIS HAS EXACT SAME ORDER AS [token_list]
 enum token_type_e
 {
+	SPACE,				// ' '
 	NOT_EQUAL,			// !=
+	DOUBLE_QUOTE,		// "
 	MODULO, 			// %
 	LOGICAL_AND,		// &&
 	OPEN_PAREN, 		// (

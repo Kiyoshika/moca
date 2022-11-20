@@ -11,10 +11,11 @@ bool parse_definition(
 		struct err_msg_t* err)
 {
 	bool contains_end_statement = false;
+	bool inside_quotes = false;
 
 	// when first parsing a defintion, we expect a TEXT token immediately after
 	// the data type
-	enum token_type_e next_expected_token_types[5];
+	enum token_type_e next_expected_token_types[7];
 	enum token_category_e next_expected_token_categories[5];
 	size_t next_expected_token_types_len = 1;
 	size_t next_expected_token_categories_len = 1;
@@ -58,7 +59,13 @@ bool parse_definition(
 				next_expected_token_types[2] = CLOSE_PAREN;
 				next_expected_token_types[3] = END_STATEMENT;
 				next_expected_token_types[4] = COMMA;
-				next_expected_token_types_len = 5;
+				next_expected_token_types[5] = SPACE;
+				next_expected_token_types_len = 6;
+
+				// allow any text inside quotes
+				// by setting both lengths to 0
+				if (inside_quotes)
+					next_expected_token_types_len = 0;
 
 				next_expected_token_categories_len = 0;
 
@@ -69,7 +76,8 @@ bool parse_definition(
 				next_expected_token_types_len = 0;
 
 				next_expected_token_categories[0] = DATATYPE;
-				next_expected_token_categories_len = 1;
+				next_expected_token_categories[1] = SPACE;
+				next_expected_token_categories_len = 2;
 
 				break;
 			}
@@ -88,7 +96,8 @@ bool parse_definition(
 				*definition_type = FUNCTION;
 				
 				next_expected_token_types[0] = CLOSE_PAREN;
-				next_expected_token_types_len = 1;
+				next_expected_token_types[1] = SPACE;
+				next_expected_token_types_len = 2;
 
 				next_expected_token_categories[0] = DATATYPE;
 				next_expected_token_categories_len = 1;
@@ -100,7 +109,9 @@ bool parse_definition(
 				next_expected_token_types[0] = TEXT;
 				next_expected_token_types[1] = NUMBER;
 				next_expected_token_types[2] = SUBTRACTION; // negative numbers
-				next_expected_token_types_len = 4;
+				next_expected_token_types[3] = DOUBLE_QUOTE; // for strings
+				next_expected_token_types[4] = SPACE;
+				next_expected_token_types_len = 5;
 
 				next_expected_token_categories_len = 0;
 				break;
@@ -108,7 +119,8 @@ bool parse_definition(
 			case SUBTRACTION: // negative number
 			{
 				next_expected_token_types[0] = NUMBER;
-				next_expected_token_types_len = 1;
+				next_expected_token_types[1] = SPACE;
+				next_expected_token_types_len = 2;
 
 				next_expected_token_categories_len = 0;
 				break;
@@ -116,7 +128,8 @@ bool parse_definition(
 			case NUMBER:
 			{
 				next_expected_token_types[0] = END_STATEMENT;
-				next_expected_token_types_len = 1;
+				next_expected_token_types[1] = SPACE;
+				next_expected_token_types_len = 2;
 
 				next_expected_token_categories_len = 0;
 				break;
@@ -125,7 +138,8 @@ bool parse_definition(
 			{
 				next_expected_token_types[0] = END_STATEMENT;
 				next_expected_token_types[1] = OPEN_BRACE;
-				next_expected_token_types_len = 2;
+				next_expected_token_types[2] = SPACE;
+				next_expected_token_types_len = 3;
 
 				next_expected_token_categories_len = 0;
 				break;
@@ -158,6 +172,18 @@ bool parse_definition(
 				contains_end_statement = true;
 				goto endstatement;
 			}
+			case DOUBLE_QUOTE:
+			{
+				inside_quotes = !inside_quotes;
+				next_expected_token_types[0] = TEXT;
+				next_expected_token_types[1] = DOUBLE_QUOTE;
+				next_expected_token_types[2] = END_STATEMENT;
+				next_expected_token_types[3] = SPACE;
+				next_expected_token_types_len = 4;
+
+				next_expected_token_categories_len = 0;
+				break;
+			}
 
 			default:
 				break;
@@ -168,7 +194,8 @@ bool parse_definition(
 			case DATATYPE:
 			{
 				next_expected_token_types[0] = TEXT;
-				next_expected_token_types_len = 1;
+				next_expected_token_types[1] = SPACE;
+				next_expected_token_types_len = 2;
 
 				next_expected_token_categories_len = 0;
 				break;
@@ -176,6 +203,14 @@ bool parse_definition(
 
 			default:
 				break;
+		}
+
+		// only add spaces to the buffer if we are insides quotes (for strings)
+		// TODO: may need to do the same thing for TABS and NEWLINE characters
+		if (!inside_quotes && token_array->token[*token_array_idx].type == SPACE)
+		{
+			(*token_array_idx)++;
+			continue;
 		}
 
 		tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);

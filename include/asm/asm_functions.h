@@ -17,7 +17,7 @@ void asm_create_text_section(FILE* asm_file);
 // write all functions from global scope into the assembly counterparts
 bool asm_function_create(
 		FILE* asm_file,
-		const struct global_scope_t* global_scope,
+		struct global_scope_t* global_scope,
 		struct err_msg_t* err);
 
 #endif

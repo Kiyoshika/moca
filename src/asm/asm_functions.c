@@ -1,15 +1,10 @@
 #include "asm_functions.h"
+#include "asm_sections.h"
 #include "global_scope.h"
 #include "functions.h"
 #include "variables.h"
 #include "parameters.h"
 #include "err_msg.h"
-
-void asm_create_text_section(FILE* asm_file)
-{
-	fprintf(asm_file, "%s\n", ".section .text");
-	fprintf(asm_file, "%s\n", ".globl main");
-}
 
 // check if assignment value (arg2) is a variable (if it's alphanumeric and contains at least one letter)
 static bool _check_is_variable(const char* argvalue)
@@ -35,6 +30,7 @@ static bool _check_is_variable(const char* argvalue)
 static bool _find_variable_position(
 		const struct function_t* function,
 		const char* variable_name,
+		size_t* variable_idx,
 		ssize_t* variable_stack_position,
 		size_t* variable_bytes_size)
 {
@@ -44,6 +40,7 @@ static bool _find_variable_position(
 		if (strcmp(function->variables[i].name, variable_name) == 0)
 		{
 			*variable_bytes_size = function->variables[i].bytes_size;
+			*variable_idx = i;
 			return true;
 		}
 	}
@@ -53,6 +50,7 @@ static bool _find_variable_position(
 
 static bool _asm_function_write_instructions(
 		FILE* asm_file,
+		struct global_scope_t* global_scope,
 		const struct function_t* function,
 		struct err_msg_t* err)
 {
@@ -65,14 +63,26 @@ static bool _asm_function_write_instructions(
 				// TODO: this stack position does NOT currently
 				// account for 7th+ parameters (which get allocated
 				// on the stack)
+				size_t variable_idx = 0;
 				ssize_t variable_stack_position = 0;
 				size_t variable_bytes_size = 0;
 
 				_find_variable_position(
 						function,
 						function->instruction_arg1[i],
+						&variable_idx,
 						&variable_stack_position,
 						&variable_bytes_size);
+
+				// string literals will be added to global scope
+				if (function->variables[variable_idx].type == STRING)
+				{
+					gscope_add_variable(
+						global_scope,
+						&function->variables[variable_idx],
+						err);
+					continue;
+				}
 
 				char mov_text[5];
 				switch (variable_bytes_size)
@@ -124,6 +134,7 @@ static bool _asm_function_write_instructions(
 					if (!_find_variable_position(
 						function,
 						function->instruction_arg2[i],
+						&variable_idx,
 						&variable_assign_stack_position,
 						&variable_assign_bytes_size))
 					{
@@ -205,7 +216,7 @@ static bool _asm_function_write_instructions(
 
 bool asm_function_create(
 		FILE* asm_file,
-		const struct global_scope_t* global_scope,
+		struct global_scope_t* global_scope,
 		struct err_msg_t* err)
 {
 	for (size_t i = 0; i < global_scope->n_functions; ++i)
@@ -216,7 +227,7 @@ bool asm_function_create(
 		fprintf(asm_file, "\t%s\n", "movq %rsp, %rbp");
 
 		// translate function instructions into raw assembly
-		if (!_asm_function_write_instructions(asm_file, &global_scope->functions[i], err))
+		if (!_asm_function_write_instructions(asm_file, global_scope, &global_scope->functions[i], err))
 			return false;
 
 		// cleanup stack and restore base pointer

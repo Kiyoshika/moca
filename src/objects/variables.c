@@ -33,25 +33,31 @@ bool variable_set_type(
 			variable->type = INT8;
 			variable->bytes_size = 1;
 			return true;
-		};
+		}
 		case INT16:
 		{
 			variable->type = INT16;
 			variable->bytes_size = 2;
 			return true;
-		};
+		}
 		case INT32:
 		{
 			variable->type = INT32;
 			variable->bytes_size = 4;
 			return true;
-		};
+		}
 		case INT64:
 		{
 			variable->type = INT64;
 			variable->bytes_size = 8;
 			return true;
-		};
+		}
+		case STRING:
+		{
+			variable->type = STRING;
+			variable->bytes_size = 0; // will be set later
+			return true;
+		}
 		default:
 		{
 			err_write(err, "Attempted to create variable with invalid type.", 0, 0);
@@ -98,7 +104,7 @@ bool variable_set_value(
 		char* valuestr,
 		struct err_msg_t* err)
 {
-	if (!variable->value)
+	if (variable->value)
 		free(variable->value);
 	
 	variable->value = strdup(valuestr);
@@ -107,6 +113,8 @@ bool variable_set_value(
 		err_write(err, "Couldn't allocate memory for variable value.", 0, 0);
 		return false;
 	}
+	if (variable->type == STRING)
+		variable->bytes_size = strlen(valuestr);
 	
 	return true;
 }

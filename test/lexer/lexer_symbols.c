@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
-#define N_TEST_TOKENS 6
+#define N_TEST_TOKENS 7
 int main()
 {
 	struct source_buffer_t srcbuffer;
@@ -24,7 +24,8 @@ int main()
 		OPEN_BRACE,
 		CLOSE_BRACE,
 		END_STATEMENT,
-		COMMA
+		COMMA,
+		DOUBLE_QUOTE
 	};
 
 	lexer_parse(&array);

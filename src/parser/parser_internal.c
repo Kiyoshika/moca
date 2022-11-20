@@ -6,6 +6,13 @@ bool token_is_expected(
 		size_t expected_token_types_len,
 		size_t expected_token_categories_len)
 {
+	// if both lengths are set to 0, allow any token
+	// (currently only used for parsing strings to allow arbitrary
+	// text inside)
+	if (expected_token_types_len == 0
+		&& expected_token_categories_len == 0)
+		return true;
+
 	// need to support searching either token category or token types.
 	// the lazy way is to just iterate over both loops...not really "efficient"
 	// but these loops are very small so it doesn't really matter
