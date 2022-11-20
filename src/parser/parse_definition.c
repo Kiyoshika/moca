@@ -73,11 +73,11 @@ bool parse_definition(
 			}
 			case COMMA: // data type MUST come after comma (e.g., writing function args)
 			{
-				next_expected_token_types_len = 0;
+				next_expected_token_types[0] = SPACE;
+				next_expected_token_types_len = 1;
 
 				next_expected_token_categories[0] = DATATYPE;
-				next_expected_token_categories[1] = SPACE;
-				next_expected_token_categories_len = 2;
+				next_expected_token_categories_len = 1;
 
 				break;
 			}

@@ -13,19 +13,24 @@ int test_tokens(
 		return -1;
 	}*/
 
+	size_t expected_idx = 0;
 	for (size_t current_idx = array_start_idx; current_idx < array_end_idx; ++current_idx)
 	{
 		const char* actual_token = array->token[current_idx].text;
-		const char* expected_token = expected_tokens[current_idx - array_start_idx];
-		if (strcmp(actual_token, expected_token) != 0)
+		const char* expected_token = expected_tokens[expected_idx];
+		if (strcmp(array->token[current_idx].text, " ") != 0)
 		{
-			fprintf(stderr, "Line: %zu, Token: %zu/%zu, Expected token '%s' - got '%s'\n", 
-				current_idx/N_TEST_TOKENS+ 1,
-				current_idx % N_TEST_TOKENS+ 1,
-				(size_t)N_TEST_TOKENS,
-				expected_token, 
-				actual_token);
-			return -1;
+			expected_idx++;
+			if (strcmp(actual_token, expected_token) != 0)
+			{
+				fprintf(stderr, "Line: %zu, Token: %zu/%zu, Expected token '%s' - got '%s'\n", 
+					current_idx/N_TEST_TOKENS+ 1,
+					current_idx % N_TEST_TOKENS+ 1,
+					(size_t)N_TEST_TOKENS,
+					expected_token, 
+					actual_token);
+				return -1;
+			}
 		}
 	}
 
