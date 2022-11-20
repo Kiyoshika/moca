@@ -57,11 +57,18 @@ bool parse_definition(
 				next_expected_token_types[1] = OPEN_PAREN;
 				next_expected_token_types[2] = CLOSE_PAREN;
 				next_expected_token_types[3] = END_STATEMENT;
-				next_expected_token_types[4] = TEXT; // TODO: need to create actual COMMA token (this is just a cheap hack)
+				next_expected_token_types[4] = COMMA;
 				next_expected_token_types_len = 5;
 
-				next_expected_token_categories[0] = DATATYPE; // NOTE: this needs to be placed in "case COMMA:" after the COMMA token is created (see above TODO note)
+				next_expected_token_categories_len = 0;
 
+				break;
+			}
+			case COMMA: // data type MUST come after comma (e.g., writing function args)
+			{
+				next_expected_token_types_len = 0;
+
+				next_expected_token_categories[0] = DATATYPE;
 				next_expected_token_categories_len = 1;
 
 				break;

@@ -10,6 +10,7 @@ char token_list[N_TOKENS][MAX_TOKEN_LIST_LEN] = {
 	"+",
 	"++",
 	"+=",
+	",",
 	"-",
 	"--",
 	"-=",
@@ -25,6 +26,7 @@ char token_list[N_TOKENS][MAX_TOKEN_LIST_LEN] = {
 	"int32",
 	"int64",
 	"int8",
+	"string",
 	"{",
 	"||",
 	"}"	

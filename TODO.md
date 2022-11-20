@@ -1,7 +1,6 @@
 # TODO LIST
 (Not necessarily in order)
 
-* Add tests for DATATYPE category in lexer
 * Update tests for parser_definition to check the correct `definition_type` enum (VARIABLE or FUNCTION)
 * Add global variables to data section (if initialized) or bss section (if uninitialized)
 * Add line and char position information in `variable_t`, `function_t` and `parameter_t` which is used when encountering errors in `asm_functions.c`
@@ -12,4 +11,3 @@
 * Display +/- 5 lines of the original source code in `err_print`
 * Write tests for `variable_t`, `function_t`, `parameter_t` and `global_scope_t`
 * Implement `err_writef` for printing formatted error messages
-* Create actual COMMA token type and replace the expected token TEXT after TEXT in `parse_definition.c` with expected token COMMA after TEXT.
