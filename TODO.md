@@ -2,14 +2,17 @@
 (Not necessarily in order)
 
 # BUGS:
-* underscores break variable names
 * commas break strings
 * Do not include string sizes when allocating stack space in functions
 	* E.g., when creating a string, those bytes are being subtracted from the stack pointer
 
+# CLEANUP
+* `_parse_variable` function inside `parser_create_variable.c` could use some cleanup, it's pretty messy
+
 # TESTS:
 * Update tests for parser_definition to check the correct `definition_type` enum (VARIABLE or FUNCTION)
 * Write tests for `variable_t`, `function_t`, `parameter_t` and `global_scope_t`
+* Add some more variable types and strings to the global variable tests
 
 # CORE:
 * Add global variables to data section (if initialized) or bss section (if uninitialized)

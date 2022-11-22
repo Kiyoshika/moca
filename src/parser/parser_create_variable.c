@@ -5,6 +5,7 @@
 #include "token.h"
 #include "global_scope.h"
 #include "functions.h"
+#include <ctype.h>
 
 static bool _text_realloc(
 		char** text,
@@ -108,18 +109,67 @@ static bool _parse_variable(
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
 {
+	// TODO: there's got to be a much better way to organise this - it's pretty...messy
+
+	size_t token_buffer_idx = 0;
+
 	// first token is data type
-	bool success = variable_set_type(new_variable, token_buffer->token[0].type, err);
+	bool success = variable_set_type(new_variable, token_buffer->token[token_buffer_idx++].type, err);
 	if (!success)
-		return _set_and_return_error(err, token_buffer, 0);	
+		return _set_and_return_error(err, token_buffer, token_buffer_idx - 1);	
 
 	// second token is name
-	success = variable_set_name(new_variable, token_buffer->token[1].text, err);
-	if (!success)
-		return _set_and_return_error(err, token_buffer, 1);
+	// name can contain underscores and other stuff, 
+	// so keep parsing until space occurs
 
-	// if no third token, this variable is uninitialized
-	if (token_buffer->length == 2)
+	// first check if first character of name token is a letter.
+	// don't names starting with random characters or numbers)
+	if (!isalpha(token_buffer->token[token_buffer_idx].text[0]))
+	{
+		err_write(
+			err, 
+			"Variable name must start with a letter.",
+			token_buffer->token[token_buffer_idx].line_num,
+			token_buffer->token[token_buffer_idx].char_pos);
+
+		return false;
+	}
+
+	char new_variable_name[VARIABLE_NAME_LEN]; // defined in include/objects/variables.h	
+	memset(new_variable_name, 0, VARIABLE_NAME_LEN);
+	size_t new_var_name_len = 0;
+	
+	// read variable name until '=' or ';' (space tokens are not included in the buffer)
+	while (token_buffer_idx < token_buffer->length
+			&& token_buffer->token[token_buffer_idx].type != ASSIGNMENT
+			&& token_buffer->token[token_buffer_idx].type != END_STATEMENT)
+	{
+		char* new_name_token = token_buffer->token[token_buffer_idx].text;
+
+		if (new_var_name_len + strlen(new_name_token) > VARIABLE_NAME_LEN - 1)
+		{
+			err_write(
+				err,
+				"Variable name cannot exceed 50 characters.",
+				token_buffer->token[token_buffer_idx].line_num,
+				token_buffer->token[token_buffer_idx].char_pos);
+
+			return false;
+		}
+
+		strncat(new_variable_name, new_name_token, strlen(new_name_token));
+		new_var_name_len += strlen(new_name_token);
+
+		token_buffer_idx++;
+	}
+
+	success = variable_set_name(new_variable, new_variable_name, err);
+	if (!success)
+		return _set_and_return_error(err, token_buffer, token_buffer_idx);
+
+	// if following token (after name) is not assignment, then
+	// it's uninitialized
+	if (token_buffer->token[token_buffer_idx++].type != ASSIGNMENT)
 	{
 		variable_set_initialized(new_variable, false);
 		variable_set_value(new_variable, "0", err); // uninitialized are defaulted to 0
@@ -131,21 +181,22 @@ static bool _parse_variable(
 	// can directly read fourth/fifth token as its value
 	variable_set_initialized(new_variable, true);
 
-	// if fourth token is double quote then it's a string
-	if (token_buffer->token[3].type == DOUBLE_QUOTE)
+	// if next token is double quote then it's a string
+	if (token_buffer->token[token_buffer_idx].type == DOUBLE_QUOTE)
 	{
 		// validate correct data type
 		if (token_buffer->token[0].type != STRING)
 		{
 			err_write(err, "Data type is not a 'string'.", 0, 0);
-			return _set_and_return_error(err, token_buffer, 3);
+			return _set_and_return_error(err, token_buffer, token_buffer_idx);
 		}
 
-		size_t buffer_idx = 4;
-		char* str_value = _get_text_between_quotes(token_buffer, &buffer_idx, err);
+		size_t initial_position = token_buffer_idx;
+		token_buffer_idx++; // move past the double quote
+		char* str_value = _get_text_between_quotes(token_buffer, &token_buffer_idx, err);
 
 		if (!str_value)
-			return _set_and_return_error(err, token_buffer, 3);
+			return _set_and_return_error(err, token_buffer, initial_position);
 
 		variable_set_value(new_variable, str_value, err);
 		free(str_value);
@@ -154,18 +205,18 @@ static bool _parse_variable(
 	}
 
 	// if fourth token is "-" then it's a negative number. 
-	if (token_buffer->token[3].text[0] == '-')
+	if (token_buffer->token[token_buffer_idx].text[0] == '-')
 	{
-		char* val = calloc(strlen(token_buffer->token[4].text) + 2, sizeof(char));
+		char* val = calloc(strlen(token_buffer->token[token_buffer_idx + 1].text) + 2, sizeof(char));
 		val[0] = '-';
-		strncat(val, token_buffer->token[4].text, strlen(token_buffer->token[4].text));
+		strncat(val, token_buffer->token[token_buffer_idx + 1].text, strlen(token_buffer->token[token_buffer_idx + 1].text));
 		success = variable_set_value(new_variable, val, err);
 	}
 	else
-		success = variable_set_value(new_variable, token_buffer->token[3].text, err);
+		success = variable_set_value(new_variable, token_buffer->token[token_buffer_idx].text, err);
 
 	if (!success)
-		return _set_and_return_error(err, token_buffer, 3);
+		return _set_and_return_error(err, token_buffer, token_buffer_idx);
 
 	return true;
 }

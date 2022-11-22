@@ -46,27 +46,9 @@ bool parse_definition(
 		// determine the next expected tokens (or end the statement)
 		switch (token_array->token[*token_array_idx].type)
 		{
-			// NOTE: will need to rework this a little bit when building
-			// strings that support quote assignments, e.g.,
-			// string text = "hello world"
-			// Would need a "inside_quote" to modify the expected tokens
-			// to allow TEXT after TEXT if we're inside quotes
-
-			case TEXT: // after text token, we expect one of "=", "(", ";"
+			case TEXT: // allow ANY token to occur after text
 			{
-				next_expected_token_types[0] = ASSIGNMENT;
-				next_expected_token_types[1] = OPEN_PAREN;
-				next_expected_token_types[2] = CLOSE_PAREN;
-				next_expected_token_types[3] = END_STATEMENT;
-				next_expected_token_types[4] = COMMA;
-				next_expected_token_types[5] = SPACE;
-				next_expected_token_types_len = 6;
-
-				// allow any text inside quotes
-				// by setting both lengths to 0
-				if (inside_quotes)
-					next_expected_token_types_len = 0;
-
+				next_expected_token_types_len = 0;
 				next_expected_token_categories_len = 0;
 
 				break;
@@ -129,7 +111,8 @@ bool parse_definition(
 			{
 				next_expected_token_types[0] = END_STATEMENT;
 				next_expected_token_types[1] = SPACE;
-				next_expected_token_types_len = 2;
+				next_expected_token_types[2] = TEXT;
+				next_expected_token_types_len = 3;
 
 				next_expected_token_categories_len = 0;
 				break;
