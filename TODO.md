@@ -2,9 +2,7 @@
 (Not necessarily in order)
 
 # BUGS:
-* commas break strings
-* Do not include string sizes when allocating stack space in functions
-	* E.g., when creating a string, those bytes are being subtracted from the stack pointer
+* Providing non-existant moca file to comiler frontend causes it to crash
 
 # CLEANUP
 * `_parse_variable` function inside `parser_create_variable.c` could use some cleanup, it's pretty messy

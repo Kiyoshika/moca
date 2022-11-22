@@ -43,149 +43,153 @@ bool parse_definition(
 			return false;
 		}
 
-		// determine the next expected tokens (or end the statement)
-		switch (token_array->token[*token_array_idx].type)
+		// determine whether or not we're in between quotes
+		if (token_array->token[*token_array_idx].type == DOUBLE_QUOTE)
+			inside_quotes = !inside_quotes;
+
+		// if parsing inside quotes, allow any token combination by setting both lengths to 0
+		if (inside_quotes)
 		{
-			case TEXT: // allow ANY token to occur after text
+			next_expected_token_types_len = 0;
+			next_expected_token_categories_len = 0;
+		}
+		else // otherwise, build a mapping of which token types are expected in sequence.
+			 // Compiler will throw a "Unexpected token" error if code doesn't match this mapping
+		{
+			// determine the next expected tokens (or end the statement)
+			switch (token_array->token[*token_array_idx].type)
 			{
-				next_expected_token_types_len = 0;
-				next_expected_token_categories_len = 0;
-
-				break;
-			}
-			case COMMA: // data type MUST come after comma (e.g., writing function args)
-			{
-				next_expected_token_types[0] = SPACE;
-				next_expected_token_types_len = 1;
-
-				next_expected_token_categories[0] = DATATYPE;
-				next_expected_token_categories_len = 1;
-
-				break;
-			}
-			case OPEN_PAREN:
-			{
-				if (!allow_defining_functions)
+				case TEXT: // allow ANY token to occur after text
 				{
-					err_write(err, "Cannot define a function here.", 
-							token_array->token[*token_array_idx].line_num,
-							token_array->token[*token_array_idx].char_pos);
-					return false;
+					next_expected_token_types_len = 0;
+					next_expected_token_categories_len = 0;
+
+					break;
+				}
+				case COMMA: // data type MUST come after comma (e.g., writing function args) unless inside string (text, numbers, etc)
+				{
+					next_expected_token_types[0] = SPACE;
+					next_expected_token_types_len = 1;
+
+					next_expected_token_categories[0] = DATATYPE;
+					next_expected_token_categories_len = 1;
+
+					break;
+				}
+				case OPEN_PAREN:
+				{
+					if (!allow_defining_functions)
+					{
+						err_write(err, "Cannot define a function here.", 
+								token_array->token[*token_array_idx].line_num,
+								token_array->token[*token_array_idx].char_pos);
+						return false;
+					}
+
+					// text followed by open parenthesis indicates we
+					// are creating a function
+					*definition_type = FUNCTION;
+					
+					next_expected_token_types[0] = CLOSE_PAREN;
+					next_expected_token_types[1] = SPACE;
+					next_expected_token_types_len = 2;
+
+					next_expected_token_categories[0] = DATATYPE;
+					next_expected_token_categories_len = 1;
+
+					break;
+				}
+				case ASSIGNMENT:
+				{
+					next_expected_token_types[0] = TEXT;
+					next_expected_token_types[1] = NUMBER;
+					next_expected_token_types[2] = SUBTRACTION; // negative numbers
+					next_expected_token_types[3] = DOUBLE_QUOTE; // for strings
+					next_expected_token_types[4] = SPACE;
+					next_expected_token_types_len = 5;
+
+					next_expected_token_categories_len = 0;
+					break;
+				}
+				case SUBTRACTION: // negative number
+				{
+					next_expected_token_types[0] = NUMBER;
+					next_expected_token_types[1] = SPACE;
+					next_expected_token_types_len = 2;
+
+					next_expected_token_categories_len = 0;
+					break;
+				}
+				case NUMBER:
+				{
+					next_expected_token_types[0] = END_STATEMENT;
+					next_expected_token_types[1] = SPACE;
+					next_expected_token_types[2] = TEXT;
+					next_expected_token_types_len = 3;
+
+					next_expected_token_categories_len = 0;
+					break;
+				}
+				case CLOSE_PAREN:
+				{
+					next_expected_token_types[0] = END_STATEMENT;
+					next_expected_token_types[1] = OPEN_BRACE;
+					next_expected_token_types[2] = SPACE;
+					next_expected_token_types_len = 3;
+
+					next_expected_token_categories_len = 0;
+					break;
+				}
+				// when reaching open brace, store ALL tokens between { and } into the token buffer,
+				// these will be parsed in a moment
+				case OPEN_BRACE:
+				{
+					// read tokens until closing brace
+					while (*token_array_idx < token_array->length 
+							&& token_array->token[*token_array_idx].type != CLOSE_BRACE)
+					{
+						tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);
+					}
+
+					// add closing brace (if present and not at end of file)
+					if (*token_array_idx < token_array->length
+							&& token_array->token[*token_array_idx].type == CLOSE_BRACE)
+					{
+						tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);
+						contains_end_statement = true;
+						goto endstatement;
+					}
+					break;
 				}
 
-				// text followed by open parenthesis indicates we
-				// are creating a function
-				*definition_type = FUNCTION;
-				
-				next_expected_token_types[0] = CLOSE_PAREN;
-				next_expected_token_types[1] = SPACE;
-				next_expected_token_types_len = 2;
-
-				next_expected_token_categories[0] = DATATYPE;
-				next_expected_token_categories_len = 1;
-
-				break;
-			}
-			case ASSIGNMENT:
-			{
-				next_expected_token_types[0] = TEXT;
-				next_expected_token_types[1] = NUMBER;
-				next_expected_token_types[2] = SUBTRACTION; // negative numbers
-				next_expected_token_types[3] = DOUBLE_QUOTE; // for strings
-				next_expected_token_types[4] = SPACE;
-				next_expected_token_types_len = 5;
-
-				next_expected_token_categories_len = 0;
-				break;
-			}
-			case SUBTRACTION: // negative number
-			{
-				next_expected_token_types[0] = NUMBER;
-				next_expected_token_types[1] = SPACE;
-				next_expected_token_types_len = 2;
-
-				next_expected_token_categories_len = 0;
-				break;
-			}
-			case NUMBER:
-			{
-				next_expected_token_types[0] = END_STATEMENT;
-				next_expected_token_types[1] = SPACE;
-				next_expected_token_types[2] = TEXT;
-				next_expected_token_types_len = 3;
-
-				next_expected_token_categories_len = 0;
-				break;
-			}
-			case CLOSE_PAREN:
-			{
-				next_expected_token_types[0] = END_STATEMENT;
-				next_expected_token_types[1] = OPEN_BRACE;
-				next_expected_token_types[2] = SPACE;
-				next_expected_token_types_len = 3;
-
-				next_expected_token_categories_len = 0;
-				break;
-			}
-			// when reaching open brace, store ALL tokens between { and } into the token buffer,
-			// these will be parsed in a moment
-			case OPEN_BRACE:
-			{
-				// read tokens until closing brace
-				while (*token_array_idx < token_array->length 
-						&& token_array->token[*token_array_idx].type != CLOSE_BRACE)
+				// stop parsing after ';' in variable definition
+				case END_STATEMENT:
 				{
-					tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);
-				}
-
-				// add closing brace (if present and not at end of file)
-				if (*token_array_idx < token_array->length
-						&& token_array->token[*token_array_idx].type == CLOSE_BRACE)
-				{
-					tkn_array_push(token_buffer, &token_array->token[(*token_array_idx)++]);
 					contains_end_statement = true;
 					goto endstatement;
 				}
-				break;
+				
+
+				default:
+					break;
 			}
 
-			// stop parsing after ';' in variable definition
-			case END_STATEMENT:
+			switch (token_array->token[*token_array_idx].category)
 			{
-				contains_end_statement = true;
-				goto endstatement;
-			}
-			case DOUBLE_QUOTE:
-			{
-				inside_quotes = !inside_quotes;
-				next_expected_token_types[0] = TEXT;
-				next_expected_token_types[1] = DOUBLE_QUOTE;
-				next_expected_token_types[2] = END_STATEMENT;
-				next_expected_token_types[3] = SPACE;
-				next_expected_token_types_len = 4;
+				case DATATYPE:
+				{
+					next_expected_token_types[0] = TEXT;
+					next_expected_token_types[1] = SPACE;
+					next_expected_token_types_len = 2;
 
-				next_expected_token_categories_len = 0;
-				break;
+					next_expected_token_categories_len = 0;
+					break;
+				}
+
+				default:
+					break;
 			}
 
-			default:
-				break;
-		}
-
-		switch (token_array->token[*token_array_idx].category)
-		{
-			case DATATYPE:
-			{
-				next_expected_token_types[0] = TEXT;
-				next_expected_token_types[1] = SPACE;
-				next_expected_token_types_len = 2;
-
-				next_expected_token_categories_len = 0;
-				break;
-			}
-
-			default:
-				break;
 		}
 
 		// only add spaces to the buffer if we are insides quotes (for strings)
