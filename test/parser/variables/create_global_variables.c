@@ -14,6 +14,7 @@ static int validate_variable(
 		const struct variable_t* variable,
 		enum token_type_e expected_type,
 		size_t expected_bytes_size,
+		char* expected_name,
 		char* expected_value)
 {
 	int valid = 0;
@@ -26,6 +27,12 @@ static int validate_variable(
 	if (variable->bytes_size != expected_bytes_size)
 	{
 		fprintf(stderr, "Variable #%zu: Expected size (bytes) '%zu' but got '%zu'.\n", current_var, expected_bytes_size, variable->bytes_size);
+		valid = -1;
+	}
+
+	if (strcmp(variable->name, expected_name) != 0)
+	{
+		fprintf(stderr, "Variable #%zu: Expected name '%s' but got '%s'.\n", current_var, expected_name, variable->name);
 		valid = -1;
 	}
 
@@ -65,15 +72,35 @@ int main()
 	srcbuffer_free(&srcbuffer);
 	tkn_array_free(&token_array);
 
-	struct variable_t* variable = &global_scope.variables[0];
-	int valid;
-	valid = validate_variable(variable, INT8, 1, "12");
-	testval = valid == -1 ? -1 : testval;
+	size_t expected_global_variables = 4;
+	if (global_scope.n_variables != expected_global_variables)
+	{
+		fprintf(stderr, "Expected %zu global variables but got %zu.\n",
+			expected_global_variables,
+			global_scope.n_variables);
 
-	variable = &global_scope.variables[1];
-	valid = validate_variable(variable, INT8, 1, "-12");
-	testval = valid == -1 ? -1 : testval;
+		testval = -1;
+	}
+	else
+	{
+		struct variable_t* variable = &global_scope.variables[0];
+		int valid;
+		valid = validate_variable(variable, INT8, 1, "x00", "12");
+		testval = valid == -1 ? -1 : testval;
 
+		variable = &global_scope.variables[1];
+		valid = validate_variable(variable, INT8, 1, "x01", "-12");
+		testval = valid == -1 ? -1 : testval;
+
+		variable = &global_scope.variables[2];
+		valid = validate_variable(variable, INT32, 4, "some_long_23_name", "100");
+		testval = valid == -1 ? -1 : testval;
+
+		variable = &global_scope.variables[3];
+		valid = validate_variable(variable, INT32, 4, "some_other_long_name", "0");
+		testval = valid == -1 ? -1 : testval;
+	}
+	
 	gscope_free(&global_scope);
 
 	return testval;

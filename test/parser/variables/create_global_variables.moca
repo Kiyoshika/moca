@@ -1,2 +1,4 @@
 int8 x00 = 12;
 int8 x01 = -12;
+int32 some_long_23_name = 100;
+int32 some_other_long_name;
