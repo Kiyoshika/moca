@@ -23,6 +23,8 @@
 * Check if variable name already exists (either parameter or local stack) when creating new variable inside function
 * Add support for expressions during assignment/defintions (e.g., `int32 x = 3 + y - 1 * 5 / z`) - will need to translate these in a special way
 * Add function calls (and the built-in `printf` which uses the C library's version)
+	* IN PROGRESS: finish `_parse_function_call_args` function in `parser_create_function_call.c`
+	* Throw error if one tries to create a function named `printf`
 
 # NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.

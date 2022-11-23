@@ -155,8 +155,6 @@ bool parser_create_function(
 			&& token_buffer->token[token_buffer_idx].type != CLOSE_BRACE)
 	{
 
-		printf("CURRENT TOKEN: %s\n", token_buffer->token[token_buffer_idx].text);
-
 		switch (token_buffer->token[token_buffer_idx].category)
 		{
 			// defining variable in local scope
@@ -185,8 +183,9 @@ bool parser_create_function(
 					goto endparse;
 
 				tkn_array_clear(&function_buffer);
+				continue;
 
-				break;
+				break; // unreachable
 			}
 
 			default:
@@ -215,6 +214,8 @@ bool parser_create_function(
 			default:
 				break;
 		}
+
+		tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
 	}
 
 endparse:

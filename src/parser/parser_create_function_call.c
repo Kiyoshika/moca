@@ -38,7 +38,7 @@ static bool _extract_function_name(
 		function_call_name_len += strlen(new_name_token);
 	}
 
-	return false;
+	return true;
 }
 
 bool _find_function_index(
@@ -58,6 +58,54 @@ bool _find_function_index(
 
 	err_write(err, "Function name not found.", 0, 0);
 	return false;
+}
+
+void _parse_function_call_args(
+		struct token_array_t* token_buffer,
+		size_t* token_buffer_idx,
+		struct err_msg_t* err)
+{
+	bool function_is_closed = false;
+
+	(*token_buffer_idx)++; // skip '(' from function call
+
+	struct token_array_t arg_buffer;
+	tkn_array_create(&arg_buffer, 10);
+
+	// keep reading tokens until ')' is found (or not...if function is left open)
+	while (*token_buffer_idx < token_buffer->length)
+	{
+		switch (token_buffer->token[*token_buffer_idx].type)
+		{
+			case CLOSE_PAREN:
+				function_is_closed = true;
+				goto endwhile;
+				break;
+
+			case COMMA: // TODO: check if number/string literal or variable name
+						// and write function instruction
+				tkn_array_clear(&arg_buffer);
+				break;
+
+			default:
+				tkn_array_push(&arg_buffer, &token_buffer->token[(*token_buffer_idx)++]);
+				break;
+		}
+	}
+
+endwhile:
+	// TODO: handle any variable after closing parenthesis which is still in buffer
+	if (arg_buffer.length > 0)
+	{
+		// ...
+	}
+
+	if (!function_is_closed)
+	{
+		// TODO: write error here
+	}
+
+	tkn_array_free(&arg_buffer);
 }
 
 bool parser_create_function_call(
@@ -84,6 +132,13 @@ bool parser_create_function_call(
 		err->char_pos = token_buffer->token[*token_buffer_idx].char_pos;
 		return false;
 	}
+
+	// extract arguments and write a ADD_ARG instruction which takes
+	// the value/variable name as arg1 and the argument index as arg2
+	_parse_function_call_args(token_buffer, token_buffer_idx, err);
+
+	// then finally create the CALL_FUN instruction which takes
+	// the name of the function as arg1 and NULL as arg2
 
 	return true;
 }

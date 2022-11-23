@@ -226,10 +226,6 @@ bool parser_create_global_variable(
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
 {
-	printf("\n\nGLOBAL VARIABLE BUFFER:\n");
-	for (size_t i = 0; i < token_buffer->length; ++i)
-		printf("%s\n", token_buffer->token[i].text);
-
 	struct variable_t new_variable;
 	variable_create(&new_variable);
 
@@ -252,10 +248,6 @@ bool parser_create_local_variable(
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
 {
-	printf("\n\nLOCAL VARIABLE BUFFER:\n");
-	for (size_t i = 0; i < token_buffer->length; ++i)
-		printf("%s\n", token_buffer->token[i].text);
-
 	struct variable_t new_variable;
 	variable_create(&new_variable);
 
