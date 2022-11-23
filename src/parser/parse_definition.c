@@ -17,10 +17,9 @@ bool parse_definition(
 	// the data type
 	enum token_type_e next_expected_token_types[7];
 	enum token_category_e next_expected_token_categories[5];
-	size_t next_expected_token_types_len = 1;
+	size_t next_expected_token_types_len = 0;
 	size_t next_expected_token_categories_len = 1;
-	next_expected_token_types[0] = TEXT;
-	next_expected_token_categories[0] = NONE;
+	next_expected_token_categories[0] = DATATYPE;
 
 	// by default we'll assume we're creating a variable unless we hit
 	// specific function token (open parenthesis)
@@ -166,6 +165,7 @@ bool parse_definition(
 				case END_STATEMENT:
 				{
 					contains_end_statement = true;
+					(*token_array_idx)++; // move past semicolon
 					goto endstatement;
 				}
 				

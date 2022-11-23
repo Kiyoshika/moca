@@ -1,3 +1,4 @@
+#include "parser_create_function_call.h"
 #include "parser_create_function.h"
 #include "parser_create_variable.h"
 #include "parse_definition.h"
@@ -153,12 +154,14 @@ bool parser_create_function(
 	while (token_buffer_idx < token_buffer->length
 			&& token_buffer->token[token_buffer_idx].type != CLOSE_BRACE)
 	{
+
+		printf("CURRENT TOKEN: %s\n", token_buffer->token[token_buffer_idx].text);
+
 		switch (token_buffer->token[token_buffer_idx].category)
 		{
+			// defining variable in local scope
 			case DATATYPE:
 			{
-				tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
-
 				success = parse_definition(
 						token_buffer,
 						&token_buffer_idx,
@@ -181,11 +184,35 @@ bool parser_create_function(
 				if (!success)
 					goto endparse;
 
+				tkn_array_clear(&function_buffer);
+
 				break;
 			}
 
 			default:
-				token_buffer_idx++;
+				break;
+		}
+
+		switch (token_buffer->token[token_buffer_idx].type)
+		{
+			// making function call (all tokens up to this point should be the function name)
+			case OPEN_PAREN:
+			{
+				success = parser_create_function_call(
+						global_scope, 
+						&function, 
+						token_buffer, 
+						&token_buffer_idx,
+						&function_buffer,
+						err); 
+
+				if (!success)
+					goto endparse;
+
+				break;
+			}
+
+			default:
 				break;
 		}
 	}
