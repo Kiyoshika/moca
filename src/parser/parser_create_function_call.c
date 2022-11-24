@@ -60,12 +60,78 @@ bool _find_function_index(
 	return false;
 }
 
-void _parse_function_call_args(
+static char* _concat_arg_buffer(
+	const struct token_array_t* arg_buffer,
+	struct err_msg_t* err)
+{
+	size_t arg_str_capacity = 10;
+	char* arg_str = malloc(arg_str_capacity);
+	size_t arg_str_len = 0;
+	if (!arg_str)
+	{
+		err_write(err, "Couldn't allocate memory for parameters when making function call.", 0, 0);
+		return NULL;
+	}
+	memset(arg_str, 0, arg_str_capacity);
+
+	for (size_t i = 0; i < arg_buffer->length; ++i)
+	{
+		char* next_token = arg_buffer->token[i].text;
+		if (arg_str_len + strlen(next_token) > arg_str_capacity)
+		{
+			void* alloc = realloc(arg_str, arg_str_capacity * 2);
+			if (!alloc)
+			{
+				free(arg_str);
+				err_write(err, "Couldn't allocate memory for parameters when making function call.", 0, 0);
+				return NULL;
+			}
+			arg_str_capacity *= 2;
+			arg_str = alloc;
+		}
+		strncat(arg_str, next_token, strlen(next_token));
+		arg_str_len += strlen(next_token);
+	}
+
+	return arg_str;
+	
+}
+
+static bool _add_arg_to_function(
+	struct function_t* function,
+	struct token_array_t* arg_buffer,
+	struct err_msg_t* err)
+{
+	char* arg_str = _concat_arg_buffer(arg_buffer, err);
+	if (!arg_str)
+	{
+		tkn_array_free(arg_buffer);
+		return false;
+	}
+	bool success = function_write_instruction(
+		function, 
+		ADD_ARG, 
+		arg_str,
+		NULL,
+		err);
+	free(arg_str);
+	if (!success)
+	{
+		tkn_array_free(arg_buffer);
+		return false;
+	}
+	tkn_array_clear(arg_buffer);
+	return true;
+}
+
+static bool _parse_function_call_args(
+		struct function_t* function,
 		struct token_array_t* token_buffer,
 		size_t* token_buffer_idx,
 		struct err_msg_t* err)
 {
 	bool function_is_closed = false;
+	size_t open_paren_index = *token_buffer_idx;
 
 	(*token_buffer_idx)++; // skip '(' from function call
 
@@ -82,30 +148,42 @@ void _parse_function_call_args(
 				goto endwhile;
 				break;
 
-			case COMMA: // TODO: check if number/string literal or variable name
-						// and write function instruction
-				tkn_array_clear(&arg_buffer);
+			case COMMA: 
+				bool success = _add_arg_to_function(function, &arg_buffer, err);
+				if (!success)
+					return false;
+				(*token_buffer_idx)++;
 				break;
 
 			default:
-				tkn_array_push(&arg_buffer, &token_buffer->token[(*token_buffer_idx)++]);
+				if (token_buffer->token[*token_buffer_idx].type != SPACE) // don't add spaces to arg buffer
+					tkn_array_push(&arg_buffer, &token_buffer->token[*token_buffer_idx]);
+				(*token_buffer_idx)++;
 				break;
 		}
 	}
 
 endwhile:
-	// TODO: handle any variable after closing parenthesis which is still in buffer
 	if (arg_buffer.length > 0)
 	{
-		// ...
+		bool success = _add_arg_to_function(function, &arg_buffer, err);
+		if (!success)
+			return false;
 	}
 
 	if (!function_is_closed)
 	{
-		// TODO: write error here
+		err_write(
+			err, 
+			"Missing closing parenthesis on function.",
+			token_buffer->token[open_paren_index].line_num,
+			token_buffer->token[open_paren_index].char_pos);
+		tkn_array_free(&arg_buffer);
+		return false;
 	}
 
 	tkn_array_free(&arg_buffer);
+	return true;
 }
 
 bool parser_create_function_call(
@@ -135,7 +213,7 @@ bool parser_create_function_call(
 
 	// extract arguments and write a ADD_ARG instruction which takes
 	// the value/variable name as arg1 and the argument index as arg2
-	_parse_function_call_args(token_buffer, token_buffer_idx, err);
+	_parse_function_call_args(function, token_buffer, token_buffer_idx, err);
 
 	// then finally create the CALL_FUN instruction which takes
 	// the name of the function as arg1 and NULL as arg2

@@ -159,11 +159,16 @@ bool function_write_instruction(
 	memcpy(function->instruction_arg1[function->n_instructions], instruction_arg1, write_len);
 	function->instruction_arg1[function->n_instructions][write_len] = '\0';
 
-	len = strlen(instruction_arg2);
-	write_len = len > 50 ? 50 : len;
-	memcpy(function->instruction_arg2[function->n_instructions], instruction_arg2, write_len);
-	function->instruction_arg2[function->n_instructions][write_len] = '\0';
-
+	if (instruction_arg2)
+	{
+		len = strlen(instruction_arg2);
+		write_len = len > 50 ? 50 : len;
+		memcpy(function->instruction_arg2[function->n_instructions], instruction_arg2, write_len);
+		function->instruction_arg2[function->n_instructions][write_len] = '\0';
+	}
+	else
+		memset(function->instruction_arg2[function->n_instructions], 0, FUNCTION_INSTRUCTION_LEN); 
+	
 	function->n_instructions++;
 
 	if (function->n_instructions == function->instruction_capacity)

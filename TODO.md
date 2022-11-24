@@ -5,6 +5,9 @@
 * Providing non-existant moca file to comiler frontend causes it to crash
 * Function names break with underscores (similar to before with variable names)
 
+# LOGS:
+* Add logging for each major step (tokenizer, parser, writing function instruction, etc.) to make things a lot easier to debug
+
 # CLEANUP
 * `_parse_variable` function inside `parser_create_variable.c` could use some cleanup, it's pretty messy
 
@@ -13,6 +16,7 @@
 * Update tests for parser_definition to check the correct `definition_type` enum (VARIABLE or FUNCTION)
 * Write tests for `variable_t`, `function_t`, `parameter_t` and `global_scope_t`
 * Add some more variable types and strings to the global variable tests
+* Write tests for `function_write_instruction` and their translations into assembly
 
 # CORE:
 * Add global variables to data section (if initialized) or bss section (if uninitialized)
@@ -23,8 +27,8 @@
 * Check if variable name already exists (either parameter or local stack) when creating new variable inside function
 * Add support for expressions during assignment/defintions (e.g., `int32 x = 3 + y - 1 * 5 / z`) - will need to translate these in a special way
 * Add function calls (and the built-in `printf` which uses the C library's version)
-	* IN PROGRESS: finish `_parse_function_call_args` function in `parser_create_function_call.c`
 	* Throw error if one tries to create a function named `printf`
+	* Validate the correct argument count and argument types at compile time
 
 # NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.
