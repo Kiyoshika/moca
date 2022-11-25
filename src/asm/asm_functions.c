@@ -1,3 +1,4 @@
+#include "asm_registers.h"
 #include "asm_functions.h"
 #include "asm_sections.h"
 #include "global_scope.h"
@@ -48,6 +49,7 @@ static bool _find_variable_position(
 	return false;
 }
 
+// TODO: move this into separate file asm_instructions.c
 static void _get_move_instruction(char (*move_text)[5], size_t size)
 {
 	switch (size)
@@ -67,28 +69,6 @@ static void _get_move_instruction(char (*move_text)[5], size_t size)
 		default:
 			break;
 	}
-}
-
-static void _get_temp_register(char (*register_text)[5], size_t size)
-{
-	switch (size)
-	{
-		case 1:
-			memcpy(register_text, "%bl\0", 4); // use lower half of B register for 8bit
-			break;
-		case 2:
-			memcpy(register_text, "%bx\0", 4);
-			break;
-		case 4:
-			memcpy(register_text, "%ebx\0", 5);
-			break;
-		case 8:
-			memcpy(register_text, "%rbx\0", 5);
-			break;
-		default:
-			break;
-	}
-
 }
 
 static bool _initialize_variable(
@@ -125,9 +105,9 @@ static bool _initialize_variable(
 	char mov_text[5];
 	_get_move_instruction(&mov_text, variable_bytes_size);
 
-	// break this into its own function, I'm just lazy right now
+	// using rbx as a temp register
 	char variable_register_text[5];
-	_get_temp_register(&variable_register_text, variable_bytes_size);
+	asm_get_rbx_register(&variable_register_text, variable_bytes_size);
 
 	// this is the stack position of the variable's value
 	// we're assigning (e.g., int32 x = [y] <--).
@@ -155,31 +135,38 @@ static bool _initialize_variable(
 		char assign_mov_text[5];
 		_get_move_instruction(&assign_mov_text, variable_assign_bytes_size);
 
+		// using rbx as a temp register
 		char variable_assign_register_text[5];
-		_get_temp_register(&variable_assign_register_text, variable_assign_bytes_size);
+		asm_get_rbx_register(&variable_assign_register_text, variable_assign_bytes_size);
 
 		// move assignment variable into temp register (i.e., int32 x = [y])
 		// e.g., movq -12(%rbp), %rbx
-		fprintf(asm_file, "\t%s%s%zu%s%s\n",
+		char rbp_register_text[5];
+		asm_get_rbp_register(&rbp_register_text);
+
+		fprintf(asm_file, "\t%s%s%zu(%s), %s\n",
 				assign_mov_text, " -", variable_assign_stack_position,
-				"(%rbp), ", variable_assign_register_text);
+				rbp_register_text, variable_assign_register_text);
 
 		// move temp register into variable stack position
 		// (the one we're assigning to, i.e., int32 [x] = y)
 		// e.g., movq %rbx, -12(%rbp)
 		// NOTE: we use the size of the left-hand variable, which may be larger
 		// or smaller than the right-hand variable
-		fprintf(asm_file, "\t%s%s%s%s%zu%s\n",
-				mov_text, " ", variable_register_text, ", -", variable_stack_position, "(%rbp)");
+		fprintf(asm_file, "\t%s%s%s%s%zu(%s)\n",
+				mov_text, " ", variable_register_text, ", -", variable_stack_position, rbp_register_text);
 	}
 	else
 	{
+		char rbp_register_text[5];
+		asm_get_rbp_register(&rbp_register_text);
+
 		// move constant into stack
 		// e.g., movq $12, -15(%rbp)
-		fprintf(asm_file, "\t%s%s%s%s%s%zu%s\n", 
+		fprintf(asm_file, "\t%s%s%s%s%s%zu(%s)\n", 
 				mov_text, 
 				" $", function->instruction_arg2[function_idx], ",",
-				"-", variable_stack_position, "(%rbp)");
+				"-", variable_stack_position, rbp_register_text);
 	}
 
 	return true;
@@ -191,6 +178,8 @@ static bool _asm_function_write_instructions(
 		const struct function_t* function,
 		struct err_msg_t* err)
 {
+	size_t function_call_arg_counter = 0;
+
 	for (size_t i = 0; i < function->n_instructions; ++i)
 	{
 		switch (function->instruction_code[i])
@@ -207,6 +196,15 @@ static bool _asm_function_write_instructions(
 			case ADD_ARG:
 			{
 				// TODO: add first six arguments into registers, rest on stack
+
+				// to support multiple function calls, reset the current argument counter
+				// prior to making a new function call
+				if (i == 0 || function->instruction_code[i-1] != ADD_ARG)
+					function_call_arg_counter = 0;
+				else
+					function_call_arg_counter++;
+
+
 				break;
 			}
 

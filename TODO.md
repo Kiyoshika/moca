@@ -10,6 +10,7 @@
 
 # CLEANUP
 * `_parse_variable` function inside `parser_create_variable.c` could use some cleanup, it's pretty messy
+* All the string formatting in `asm_function.c` could use some cleanup. Currently a bunch of `%s` chained together, but could use more "clever"/cleaner formatting
 
 # TESTS:
 * Add return values back into `function_definition.moca` - after some changes to the parser, having return values will break since they are not implemented yet
@@ -29,6 +30,7 @@
 * Add function calls (and the built-in `printf` which uses the C library's version)
 	* Throw error if one tries to create a function named `printf`
 	* Validate the correct argument count and argument types at compile time
+* Create source file for all instructions (and their correct suffixes) called `asm_instructions.c` - this is very similar to `asm_registers.c` which contain all the registers used.
 
 # NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.
