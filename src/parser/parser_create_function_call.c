@@ -149,8 +149,7 @@ static bool _parse_function_call_args(
 				break;
 
 			case COMMA: 
-				bool success = _add_arg_to_function(function, &arg_buffer, err);
-				if (!success)
+				if (!_add_arg_to_function(function, &arg_buffer, err))
 					return false;
 				(*token_buffer_idx)++;
 				break;
