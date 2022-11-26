@@ -1,7 +1,7 @@
 # The Plan for Implementing Function Calls (Brainstorming)
 ```text
 func(12, x, "hello")
-func(50, y, "hello")
+func(50, y, "hallo")
 ```
 
 ```text
