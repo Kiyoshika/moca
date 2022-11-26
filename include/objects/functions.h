@@ -9,6 +9,7 @@
 #include "token.h"
 
 #define FUNCTION_NAME_LEN 51
+#define FUNCTION_INSTRUCTION_LEN 51
 
 // forward declarations
 struct variable_t;
@@ -17,7 +18,9 @@ struct err_msg_t;
 
 enum instruction_code_e
 {
-	INIT_VAR // intialize variable
+	INIT_VAR, 	// intialize variable
+	ADD_ARG, 	// add argument to function
+	CALL_FUNC 	// make function call
 };
 
 struct function_t
@@ -40,8 +43,8 @@ struct function_t
 	size_t n_instructions;
 	size_t instruction_capacity;
 	enum instruction_code_e* instruction_code;
-	char (*instruction_arg1)[51];
-	char (*instruction_arg2)[51];
+	char (*instruction_arg1)[FUNCTION_INSTRUCTION_LEN];
+	char (*instruction_arg2)[FUNCTION_INSTRUCTION_LEN];
 };
 
 // pass a stack-allocated function_t to initalize its members.
@@ -78,7 +81,8 @@ bool function_add_variable(
 		const struct variable_t* variable,
 		struct err_msg_t* err);
 
-// write an instruction to the function which will be translated into assembly
+// write an instruction to the function which will be translated into assembly.
+// instruction_arg2 is OPTIONAL and NULL can be passed. This will set arg2 for that instruction to all zeroes.
 bool function_write_instruction(
 		struct function_t* function,
 		const enum instruction_code_e instruction_code,

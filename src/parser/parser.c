@@ -45,10 +45,9 @@ bool parse_tokens(
 		switch (token_array->token[token_array_idx].category)
 		{
 			// starting a statement with a data type indicates a definition
-			// is being made
+			// is being made for either a variable or a function
 			case DATATYPE:
 			{
-				tkn_array_push(&token_buffer, &token_array->token[token_array_idx++]);
 
 				enum parse_definition_type definition_type;
 				parse_success = parse_definition(
@@ -71,6 +70,7 @@ bool parse_tokens(
 							parser_create_global_variable(global_scope, &token_buffer, err);
 						else
 							parser_create_local_variable(function_scope, &token_buffer, err);
+						token_array_idx--;
 						break;
 
 					case FUNCTION:
@@ -84,14 +84,14 @@ bool parse_tokens(
 						break;
 				}
 
+				tkn_array_clear(&token_buffer);
+
 				break;
 			}
 
 			default:
-				break;				
+				break;
 		}
-
-		tkn_array_clear(&token_buffer);
 	}
 
 endparse:

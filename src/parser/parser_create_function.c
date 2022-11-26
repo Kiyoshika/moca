@@ -1,3 +1,4 @@
+#include "parser_create_function_call.h"
 #include "parser_create_function.h"
 #include "parser_create_variable.h"
 #include "parse_definition.h"
@@ -9,6 +10,25 @@
 #include "token.h"
 #include "parameters.h"
 #include "parser.h"
+#include "built_in_functions.h"
+
+bool _function_name_reserved(
+		const char* function_name,
+		struct err_msg_t* err)
+{
+	bool is_reserved = false;
+	for (size_t i = 0; i < (size_t)N_BUILT_IN_FUNCTIONS; ++i)
+	{
+		if (strcmp(function_name, built_in_functions[i]) == 0)
+		{
+			is_reserved = true;
+			err_write(err, "Cannot use a reserved function name.", 0, 0);
+			break;
+		}
+	}
+
+	return is_reserved;
+}
 
 // read token buffer to extract and insert function parameters
 bool _extract_parameters(
@@ -114,6 +134,9 @@ bool parser_create_function(
 
 	// second token will be name
 	const char* function_name = token_buffer->token[token_buffer_idx++].text;
+	if (_function_name_reserved(function_name, err))
+		return false;
+
 	success = function_set_name(&function, function_name, err);
 
 	if (!success)
@@ -153,12 +176,12 @@ bool parser_create_function(
 	while (token_buffer_idx < token_buffer->length
 			&& token_buffer->token[token_buffer_idx].type != CLOSE_BRACE)
 	{
+
 		switch (token_buffer->token[token_buffer_idx].category)
 		{
+			// defining variable in local scope
 			case DATATYPE:
 			{
-				tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
-
 				success = parse_definition(
 						token_buffer,
 						&token_buffer_idx,
@@ -181,13 +204,40 @@ bool parser_create_function(
 				if (!success)
 					goto endparse;
 
+				tkn_array_clear(&function_buffer);
+				continue;
+
+				break; // unreachable
+			}
+
+			default:
+				break;
+		}
+
+		switch (token_buffer->token[token_buffer_idx].type)
+		{
+			// making function call (all tokens up to this point should be the function name)
+			case OPEN_PAREN:
+			{
+				success = parser_create_function_call(
+						global_scope, 
+						&function, 
+						token_buffer, 
+						&token_buffer_idx,
+						&function_buffer,
+						err); 
+
+				if (!success)
+					goto endparse;
+
 				break;
 			}
 
 			default:
-				token_buffer_idx++;
 				break;
 		}
+
+		tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
 	}
 
 endparse:

@@ -9,6 +9,17 @@ target_include_directories(moca-asmfile
 	${moca_SOURCE_DIR}/include/objects
 )
 
+# ASM REGISTERS
+add_library(moca-asmregisters
+	asm_registers.c
+)
+target_include_directories(moca-asmregisters
+	PUBLIC
+	${moca_SOURCE_DIR}/include
+	${moca_SOURCE_DIR}/include/asm
+	${moca_SOURCE_DIR}/include/objects
+)
+
 # ASM FUNCTIONS
 add_library(moca-asmfunction
 	asm_functions.c
@@ -21,6 +32,7 @@ target_include_directories(moca-asmfunction
 )
 target_link_libraries(moca-asmfunction
 	moca-asmsection
+	moca-asmregisters
 )
 
 # ASM SECTIONS

@@ -226,7 +226,6 @@ bool parser_create_global_variable(
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
 {
-
 	struct variable_t new_variable;
 	variable_create(&new_variable);
 

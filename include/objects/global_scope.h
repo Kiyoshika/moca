@@ -17,6 +17,9 @@ struct global_scope_t
 	size_t n_functions;
 	size_t function_capacity;
 
+	struct function_t* built_in_functions; // built in functions like printf, malloc, etc.
+	size_t n_built_in_functions;
+
 	struct variable_t* variables; // global varaibles defined outside functions
 	size_t n_variables;
 	size_t variable_capacity;

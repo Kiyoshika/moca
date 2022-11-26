@@ -3,6 +3,7 @@ add_library(mocaparser
 	parse_definition.c
 	parser_create_variable.c
 	parser_create_function.c
+	parser_create_function_call.c
 )
 target_include_directories(mocaparser
 	PUBLIC
