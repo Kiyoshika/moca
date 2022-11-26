@@ -27,6 +27,7 @@ target_link_libraries(mocaparameter
 # FUNCTIONS
 add_library(mocafunction
 	functions.c
+	built_in_functions.c
 )
 target_include_directories(mocafunction
 	PUBLIC

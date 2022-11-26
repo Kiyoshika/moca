@@ -27,10 +27,9 @@
 * When fetching variable stack position, account for any parameters that don't fit in the first 6 registers (`asm_functions.c`)
 * Check if variable name already exists (either parameter or local stack) when creating new variable inside function
 * Add support for expressions during assignment/defintions (e.g., `int32 x = 3 + y - 1 * 5 / z`) - will need to translate these in a special way
-* Add function calls (and the built-in `printf` which uses the C library's version)
-	* Throw error if one tries to create a function named `printf`
-	* Validate the correct argument count and argument types at compile time
 * Create source file for all instructions (and their correct suffixes) called `asm_instructions.c` - this is very similar to `asm_registers.c` which contain all the registers used.
+* In function calls, add 7th parameters onwards onto the stack (currently these are unaccounted for)
+* Add built-in functions like `printf`, `malloc`, etc. Some basic foundation started in `objects/built_in_functions.h`
 
 # NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.

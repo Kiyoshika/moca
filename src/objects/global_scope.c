@@ -18,6 +18,15 @@ bool gscope_create(
 	global_scope->n_functions = 0;
 	global_scope->function_capacity = 10;
 
+	global_scope->built_in_functions = calloc(1, sizeof(struct function_t));
+	if (!global_scope->built_in_functions)
+	{
+		err_write(err, "Couldn't allocate memory for global scope.", 0, 0);
+		return false;
+	}
+	global_scope->n_built_in_functions = 1;
+	built_in_functions_create(global_scope);
+
 	global_scope->variables = calloc(10, sizeof(struct variable_t));
 	if (!global_scope->variables)
 	{
@@ -103,6 +112,12 @@ void gscope_free(
 
 	free(global_scope->functions);
 	global_scope->functions = NULL;
+
+	for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
+		function_free(&global_scope->built_in_functions[i]);
+
+	free(global_scope->built_in_functions);
+	global_scope->built_in_functions = NULL;
 
 	free(global_scope->variables);
 	global_scope->variables = NULL;

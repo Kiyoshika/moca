@@ -10,6 +10,25 @@
 #include "token.h"
 #include "parameters.h"
 #include "parser.h"
+#include "built_in_functions.h"
+
+bool _function_name_reserved(
+		const char* function_name,
+		struct err_msg_t* err)
+{
+	bool is_reserved = false;
+	for (size_t i = 0; i < (size_t)N_BUILT_IN_FUNCTIONS; ++i)
+	{
+		if (strcmp(function_name, built_in_functions[i]) == 0)
+		{
+			is_reserved = true;
+			err_write(err, "Cannot use a reserved function name.", 0, 0);
+			break;
+		}
+	}
+
+	return is_reserved;
+}
 
 // read token buffer to extract and insert function parameters
 bool _extract_parameters(
@@ -115,6 +134,9 @@ bool parser_create_function(
 
 	// second token will be name
 	const char* function_name = token_buffer->token[token_buffer_idx++].text;
+	if (_function_name_reserved(function_name, err))
+		return false;
+
 	success = function_set_name(&function, function_name, err);
 
 	if (!success)

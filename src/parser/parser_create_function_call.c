@@ -10,6 +10,7 @@
 #include "token.h"
 #include "parameters.h"
 #include "parser.h"
+#include "built_in_functions.h"
 
 static bool _extract_function_name(
 		char* function_call_name,
@@ -99,6 +100,7 @@ static char* _concat_arg_buffer(
 
 static bool _add_arg_to_function(
 	struct function_t* function,
+	char* function_name,
 	struct token_array_t* arg_buffer,
 	struct err_msg_t* err)
 {
@@ -111,8 +113,8 @@ static bool _add_arg_to_function(
 	bool success = function_write_instruction(
 		function, 
 		ADD_ARG, 
+		function_name,
 		arg_str,
-		NULL,
 		err);
 	free(arg_str);
 	if (!success)
@@ -126,6 +128,7 @@ static bool _add_arg_to_function(
 
 static bool _parse_function_call_args(
 		struct function_t* function,
+		char* function_name,
 		struct token_array_t* token_buffer,
 		size_t* token_buffer_idx,
 		struct err_msg_t* err)
@@ -149,7 +152,7 @@ static bool _parse_function_call_args(
 				break;
 
 			case COMMA: 
-				if (!_add_arg_to_function(function, &arg_buffer, err))
+				if (!_add_arg_to_function(function, function_name, &arg_buffer, err))
 					return false;
 				(*token_buffer_idx)++;
 				break;
@@ -165,7 +168,7 @@ static bool _parse_function_call_args(
 endwhile:
 	if (arg_buffer.length > 0)
 	{
-		bool success = _add_arg_to_function(function, &arg_buffer, err);
+		bool success = _add_arg_to_function(function, function_name, &arg_buffer, err);
 		if (!success)
 			return false;
 	}
@@ -185,6 +188,15 @@ endwhile:
 	return true;
 }
 
+static bool _is_reserved_function_name(const char* function_call_name)
+{
+	for (size_t i = 0; i < (size_t)N_BUILT_IN_FUNCTIONS; ++i)
+		if (strcmp(function_call_name, built_in_functions[i]) == 0)
+			return true;
+
+	return false;
+}
+
 bool parser_create_function_call(
 		struct global_scope_t* global_scope,
 		struct function_t* function,
@@ -200,22 +212,26 @@ bool parser_create_function_call(
 	if (!success)
 		return false;
 
-	// search the function in global scope; if not found, throws an error
-	ssize_t function_idx = -1;
-	success = _find_function_index(global_scope, function_call_name, &function_idx, err);
-	if (!success)
+	if (!_is_reserved_function_name(function_call_name))
 	{
-		err->line_num = token_buffer->token[*token_buffer_idx].line_num;
-		err->char_pos = token_buffer->token[*token_buffer_idx].char_pos;
-		return false;
+		// search the function in global scope; if not found, throws an error
+		ssize_t function_idx = -1;
+		success = _find_function_index(global_scope, function_call_name, &function_idx, err);
+		if (!success)
+		{
+			err->line_num = token_buffer->token[*token_buffer_idx].line_num;
+			err->char_pos = token_buffer->token[*token_buffer_idx].char_pos;
+			return false;
+		}
 	}
 
 	// extract arguments and write a ADD_ARG instruction which takes
-	// the value/variable name as arg1 and the argument index as arg2
-	_parse_function_call_args(function, token_buffer, token_buffer_idx, err);
+	// the function name as arg1 and the variable/value as arg2
+	_parse_function_call_args(function, function_call_name, token_buffer, token_buffer_idx, err);
 
 	// then finally create the CALL_FUN instruction which takes
 	// the name of the function as arg1 and NULL as arg2
+	function_write_instruction(function, CALL_FUNC, function_call_name, NULL, err);
 
 	return true;
 }
