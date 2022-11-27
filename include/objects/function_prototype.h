@@ -22,14 +22,9 @@ struct function_prototype_t
 {
 	char name[FUNC_PROTO_NAME_LEN];
 	enum token_type_e* parameter_types;
+	size_t* parameter_byte_sizes;
 	size_t n_parameters;
 };
-
-/*
- * LIST OF BUILT-IN FUNCTIONS:
- * These will be defined in built_in_functions.c
- */
-extern struct function_prototype_t _printf;
 
 // initialize function prototype by setting its
 // name to zero and NULL parameter_types.

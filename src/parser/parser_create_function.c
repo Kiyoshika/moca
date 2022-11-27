@@ -230,6 +230,21 @@ bool parser_create_function(
 				if (!success)
 					goto endparse;
 
+				// checking for semicolon after parsing function
+				token_buffer_idx++; // move past ')' after parsing
+				if (token_buffer_idx == token_buffer->length
+					|| token_buffer->token[token_buffer_idx].type != END_STATEMENT)
+				{
+					err_write(err, "Missing semicolon after function.",
+						token_buffer->token[token_buffer_idx].line_num,
+						token_buffer->token[token_buffer_idx].char_pos);
+					success = false;
+					goto endparse;
+				}
+
+				token_buffer_idx++; // move past ';'
+				tkn_array_clear(&function_buffer);
+
 				break;
 			}
 

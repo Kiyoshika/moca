@@ -1,5 +1,6 @@
 #include "global_scope.h"
 #include "functions.h"
+#include "function_prototype.h"
 #include "variables.h"
 #include "err_msg.h"
 
@@ -18,15 +19,17 @@ bool gscope_create(
 	global_scope->n_functions = 0;
 	global_scope->function_capacity = 10;
 
-	global_scope->built_in_functions = calloc(1, sizeof(struct function_t));
+	// also start with 10 built-in functions
+	global_scope->built_in_functions = calloc(10, sizeof(struct function_prototype_t));
 	if (!global_scope->built_in_functions)
 	{
 		err_write(err, "Couldn't allocate memory for global scope.", 0, 0);
 		return false;
 	}
-	global_scope->n_built_in_functions = 1;
-	built_in_functions_create(global_scope);
+	global_scope->n_built_in_functions = 0;
+	global_scope->built_in_function_capacity = 10;
 
+	// and 10 variables
 	global_scope->variables = calloc(10, sizeof(struct variable_t));
 	if (!global_scope->variables)
 	{
@@ -109,16 +112,51 @@ void gscope_free(
 {
 	for (size_t i = 0; i < global_scope->n_functions; ++i)
 		function_free(&global_scope->functions[i]);
-
 	free(global_scope->functions);
 	global_scope->functions = NULL;
-
-	for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
-		function_free(&global_scope->built_in_functions[i]);
 
 	free(global_scope->built_in_functions);
 	global_scope->built_in_functions = NULL;
 
 	free(global_scope->variables);
 	global_scope->variables = NULL;
+}
+
+bool gscope_add_function_prototype(
+	struct global_scope_t* global_scope,
+	const struct function_prototype_t* function_prototype,
+	struct err_msg_t* err)
+{
+	memcpy(&global_scope->built_in_functions[global_scope->n_built_in_functions++], function_prototype, sizeof(struct function_prototype_t));
+	if (global_scope->n_built_in_functions == global_scope->built_in_function_capacity)
+	{
+		void* alloc = realloc(global_scope->built_in_functions, global_scope->built_in_function_capacity * 2 * sizeof(struct function_prototype_t));
+		if (!alloc)
+		{
+			err_write(err, "Couldn't reallocate memory in global scope when adding a new built-in function.", 0, 0);
+			return false;
+		}
+		global_scope->built_in_functions = alloc;
+		global_scope->built_in_function_capacity *= 2;
+	}
+	
+	return true;
+}
+
+bool gscope_edit_function_prototype(
+	struct global_scope_t* global_scope,
+	const struct function_prototype_t* function_prototype,
+	struct err_msg_t* err)
+{
+	for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
+	{
+		if (strcmp(global_scope->built_in_functions[i].name, function_prototype->name) == 0)
+		{
+			memcpy(&global_scope->built_in_functions[i], function_prototype, sizeof(struct function_prototype_t));
+			return true;
+		}
+	}
+
+	err_write(err, "Couldn't find function when attempting to modify global scope function prototype.", 0, 0);
+	return false;
 }

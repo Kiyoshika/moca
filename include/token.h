@@ -70,6 +70,9 @@ struct token_t
 	enum token_category_e category; // higher level token type category that lexer assigns to a given token
 };
 
+// get bytes size for a specific token
+size_t tkn_get_bytes_size(enum token_type_e token);
+
 // Create a new token with [token_text] on a given [line_num] at position [char_pos]
 // with respect to the current [line_num].
 // Returns true if token was created successfully, false otherwise.

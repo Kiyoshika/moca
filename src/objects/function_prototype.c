@@ -7,6 +7,7 @@ void func_proto_init(
 	struct function_prototype_t* function_prototype)
 {
 	memset(function_prototype->name, 0, FUNC_PROTO_NAME_LEN);
+	function_prototype->parameter_byte_sizes = NULL;
 	function_prototype->parameter_types = NULL;
 	function_prototype->n_parameters = 0;
 }
@@ -34,8 +35,16 @@ bool func_proto_set_arg_types(
 	function_prototype->parameter_types = alloc;
 	function_prototype->n_parameters = n_parameters;
 
+	alloc = realloc(function_prototype->parameter_byte_sizes, n_parameters * sizeof(size_t));
+	if (!alloc)
+		return false;
+	function_prototype->parameter_byte_sizes = alloc;
+
 	for (size_t i = 0; i < n_parameters; ++i)
+	{
 		function_prototype->parameter_types[i] = parameter_types[i];
+		function_prototype->parameter_byte_sizes[i] = tkn_get_bytes_size(parameter_types[i]);
+	}
 
 	return true;
 }
@@ -45,6 +54,9 @@ void func_proto_free(
 {
 	free(function_prototype->parameter_types);
 	function_prototype->parameter_types = NULL;
+
+	free(function_prototype->parameter_byte_sizes);
+	function_prototype->parameter_byte_sizes = NULL;
 
 	function_prototype->n_parameters = 0;
 	memset(function_prototype->name, 0, FUNC_PROTO_NAME_LEN);

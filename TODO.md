@@ -20,6 +20,8 @@
 * Write tests for `function_write_instruction` and their translations into assembly
 
 # CORE:
+* Subtract stack space inside function (again)
+	* Originally I had this, but it seemed to work without it...although to be extra safe I think I will subtract the stack space for all local variables
 * Add global variables to data section (if initialized) or bss section (if uninitialized)
 	* This currently works for strings, but not integer types
 * Implement return values (`asm_functions.c`)
@@ -29,7 +31,6 @@
 * Add support for expressions during assignment/defintions (e.g., `int32 x = 3 + y - 1 * 5 / z`) - will need to translate these in a special way
 * Create source file for all instructions (and their correct suffixes) called `asm_instructions.c` - this is very similar to `asm_registers.c` which contain all the registers used.
 * Put all of parameters into stack inside function, then allocate any additional local variables. This is incase any of the registers happen to be used as temp registers, we will always have access to them on the stack.
-* Add built-in functions like `printf`, `malloc`, etc. Some basic foundation started in `objects/built_in_functions.h`
 
 # NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.

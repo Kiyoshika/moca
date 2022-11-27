@@ -15,6 +15,8 @@
 #include "asm_globals.h"
 #include "err_msg.h"
 #include "global_scope.h"
+#include "built_in_functions.h"
+#include "function_prototype.h"
 
 /*
  * This is the frontend for the moca compiler.
@@ -35,7 +37,7 @@ int main(int argc, char** argv)
 	if (strncmp(argv[1], "-v", 2) == 0
 		|| strncmp(argv[1], "-version", 8) == 0)
 	{
-		printf("moca version 0.1\n");
+		printf("moca version 0.0.1\n");
 		return 0;
 	}
 
@@ -56,6 +58,20 @@ int main(int argc, char** argv)
 
 	struct global_scope_t global_scope;
 	struct err_msg_t err;
+
+	if (!gscope_create(&global_scope, &err))
+	{
+		err_print(&err);
+		goto endparse;
+	}
+
+	// add built-in functions to global scope
+	if (!built_in_functions_create(&global_scope, &err))
+	{
+		err_print(&err);
+		goto endparse;
+	}
+
 	bool parsed = parse_tokens(&token_array, &global_scope, &err);
 	if (!parsed)
 	{
