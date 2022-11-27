@@ -7,6 +7,7 @@
 
 // forward declarations
 struct function_t;
+struct function_prototype_t;
 struct variable_t;
 struct err_msg_t;
 
@@ -17,8 +18,9 @@ struct global_scope_t
 	size_t n_functions;
 	size_t function_capacity;
 
-	struct function_t* built_in_functions; // built in functions like printf, malloc, etc.
+	struct function_prototype_t* built_in_functions; // built in functions like printf, malloc, etc.
 	size_t n_built_in_functions;
+	size_t built_in_function_capacity;
 
 	struct variable_t* variables; // global varaibles defined outside functions
 	size_t n_variables;
@@ -39,6 +41,22 @@ bool gscope_add_function(
 		struct global_scope_t* global_scope,
 		const struct function_t* function,
 		struct err_msg_t* err);
+
+// attempt to add a function prototype to the global scope.
+// these are mainly used for "defining" built-in function types
+// to check parameters at compile time.
+bool gscope_add_function_prototype(
+	struct global_scope_t* global_scope,
+	const struct function_prototype_t* function_prototype,
+	struct err_msg_t* err);
+
+// edit an existing function prototype in global scope
+// by passing another function_prototype with the same name.
+// e.g., if printf changes its parameters
+bool gscope_edit_function_prototype(
+	struct global_scope_t* global_scope,
+	const struct function_prototype_t* function_prototype,
+	struct err_msg_t* err);
 
 // attempt to add a variable to the global scope.
 // the contents of [variable] are copied.

@@ -7,6 +7,7 @@
 #include "parameters.h"
 #include "err_msg.h"
 #include "built_in_functions.h"
+#include "function_prototype.h"
 
 // check if assignment value (arg2) is a variable (if it's alphanumeric and contains at least one letter)
 static bool _check_is_variable(const char* argvalue)
@@ -53,11 +54,17 @@ static bool _find_variable_position(
 // check if variable is in global scope (currently only used for strings)
 static bool _is_global_variable(
 		const struct global_scope_t* global_scope,
-		const char* variable_name)
+		const char* variable_name,
+		size_t* global_var_idx)
 {
 	for (size_t i = 0; i < global_scope->n_variables; ++i)
+	{
 		if (strcmp(global_scope->variables[i].name, variable_name) == 0)
+		{
+			*global_var_idx = i;
 			return true;
+		}
+	}
 
 	return false;
 }
@@ -228,7 +235,9 @@ static bool _asm_function_write_instructions(
 		struct err_msg_t* err)
 {
 	size_t function_call_arg_counter = 0;
-	const struct function_t* reference_function = NULL;
+	struct function_t* reference_function = NULL;
+	bool using_builtin_function = false;
+	struct function_prototype_t* reference_built_in_function = NULL;
 
 	for (size_t i = 0; i < function->n_instructions; ++i)
 	{
@@ -268,10 +277,18 @@ static bool _asm_function_write_instructions(
 					// if function not in global scope, check built-in functions
 					if (!reference_function)
 					{
-						// TODO: check for built-in functions (global_scope->built_in_functions)
+						for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
+						{
+							if (strcmp(function_name, global_scope->built_in_functions[i].name) == 0)
+							{
+								reference_built_in_function = &global_scope->built_in_functions[i];
+								using_builtin_function = true;
+								break;
+							}
+						}
 					}
 
-					if (!reference_function)
+					if (!reference_function && !using_builtin_function)
 					{
 						err_write(err, "Unknown function.", 0, 0);
 						return false;
@@ -281,7 +298,8 @@ static bool _asm_function_write_instructions(
 					function_call_arg_counter++;
 				
 				
-				if (function_call_arg_counter + 1 > reference_function->n_parameters)
+				if ((!using_builtin_function && function_call_arg_counter + 1 > reference_function->n_parameters)
+					|| (using_builtin_function && function_call_arg_counter + 1 > reference_built_in_function->n_parameters))
 				{
 					err_write(err, "Passed too many arguments to function.", 0, 0);
 					return false;
@@ -304,6 +322,11 @@ static bool _asm_function_write_instructions(
 						&variable_stack_position,
 						&variable_bytes_size))
 					{
+						// if variable is a STRING, then pass 8 bytes to get the largest register size (since
+						// we actually pass the address of the string, which is 8 bytes)
+						if (function->variables[variable_idx].type == STRING)
+							variable_bytes_size = 8;
+
 						// fetch variable value
 						bool is_stack = _get_arg_register(
 								&arg_register_text,
@@ -317,19 +340,33 @@ static bool _asm_function_write_instructions(
 						}
 						else
 						{
-							// move variable from stack into appropriate register
-							// e.g., movq -12(%rsp), %rdi
-							_get_move_instruction(&mov_text, variable_bytes_size);
-
-							fprintf(asm_file, "\t%s -%zu(%%rsp), %s\n",
-									mov_text, variable_stack_position, arg_register_text);
-						}
-					}
-					else if (_is_global_variable(
+							size_t global_var_idx = 0;
+							if (_is_global_variable(
 								global_scope,
-								function->instruction_arg2[i]))
-					{
-						// is a string
+								function->instruction_arg2[i],
+								&global_var_idx))
+							{
+								// if global varaible is a string, we'll use leaq instead of mov
+								if (global_scope->variables[global_var_idx].type == STRING)
+								{
+									fprintf(asm_file, "\tleaq %s(%%rip), %s\n",
+										global_scope->variables[global_var_idx].name, arg_register_text);
+								}
+								else
+								{
+									// TODO: handle global variables that are not strings
+								}
+							}
+							else
+							{
+								// move variable from stack into appropriate register
+								// e.g., movq -12(%rsp), %rdi
+								_get_move_instruction(&mov_text, variable_bytes_size);
+
+								fprintf(asm_file, "\t%s -%zu(%%rsp), %s\n",
+										mov_text, variable_stack_position, arg_register_text);
+							}
+						}
 					}
 					else
 					{
@@ -345,7 +382,8 @@ static bool _asm_function_write_instructions(
 					// (then we wouldn't need to allocate another one)
 					if (function->instruction_arg2[i][0] == '"')
 					{
-						if (reference_function->parameters[function_call_arg_counter].variable.type != STRING)
+						if ((!using_builtin_function && reference_function->parameters[function_call_arg_counter].variable.type != STRING)
+							|| (using_builtin_function && reference_built_in_function->parameter_types[function_call_arg_counter] != STRING))
 						{
 							err_write(err, "Tried to pass string to an integer parameter.", 0, 0);
 							return false;
@@ -409,13 +447,19 @@ static bool _asm_function_write_instructions(
 					{
 						// since it's a numerical literal, we don't know the size so we
 						// lookup the expected size
-						if (reference_function->parameters[function_call_arg_counter].variable.type == STRING)
+						if ((!using_builtin_function && reference_function->parameters[function_call_arg_counter].variable.type == STRING)
+							|| (using_builtin_function && reference_built_in_function->parameter_types[function_call_arg_counter] == STRING))
 						{
 							err_write(err, "Tried to pass integer to a string parameter.", 0, 0);
 							return false;
 						}
 
-						size_t expected_size = reference_function->parameters[function_call_arg_counter].variable.bytes_size;
+						size_t expected_size; 
+						if (!using_builtin_function)
+							expected_size = reference_function->parameters[function_call_arg_counter].variable.bytes_size;
+						else
+							expected_size = reference_built_in_function->parameter_byte_sizes[function_call_arg_counter];
+
 						// move the literal into correct register
 						// e.g., movq $12, %rdi
 						bool is_stack = _get_arg_register(
@@ -444,6 +488,10 @@ static bool _asm_function_write_instructions(
 
 			case CALL_FUNC:
 			{
+				// special case: if calling printf, need to reset lower 8 bits of rax register (al)
+				if (strcmp("printf", function->instruction_arg1[i]) == 0)
+					fprintf(asm_file, "\txor %%al, %%al\n");
+
 				fprintf(asm_file, "\tcall %s\n", function->instruction_arg1[i]);
 				break;
 			}

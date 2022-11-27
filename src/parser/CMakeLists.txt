@@ -19,4 +19,5 @@ target_link_libraries(mocaparser
 	mocavariable
 	mocafunction
 	mocaparameter
+	mocautil
 )

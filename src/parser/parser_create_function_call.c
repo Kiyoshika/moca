@@ -11,6 +11,7 @@
 #include "parameters.h"
 #include "parser.h"
 #include "built_in_functions.h"
+#include "util.h"
 
 static bool _extract_function_name(
 		char* function_call_name,
@@ -149,6 +150,31 @@ static bool _parse_function_call_args(
 			case CLOSE_PAREN:
 				function_is_closed = true;
 				goto endwhile;
+				break;
+
+			case DOUBLE_QUOTE:
+				(*token_buffer_idx)++; // skip first double quote
+				char* str_value = util_get_text_between_quotes(token_buffer, token_buffer_idx, err);
+				if (!str_value)
+				{
+					err_write(
+						err, 
+						"Problem with parsing string inside function argument.",
+						token_buffer->token[*token_buffer_idx].line_num, 
+						token_buffer->token[*token_buffer_idx].char_pos);
+					return false;
+				}
+				struct token_t temp_token;
+				tkn_create(
+					&temp_token, 
+					str_value,
+					token_buffer->token[*token_buffer_idx].line_num,
+					token_buffer->token[*token_buffer_idx].char_pos);
+				temp_token.type = STRING;
+				temp_token.category = DATATYPE;
+
+				tkn_array_push(&arg_buffer, &temp_token);
+				(*token_buffer_idx)++; // skip last double quote after parsing string
 				break;
 
 			case COMMA: 

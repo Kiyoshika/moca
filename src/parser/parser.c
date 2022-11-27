@@ -12,10 +12,6 @@ bool parse_tokens(
 	struct global_scope_t* global_scope,
 	struct err_msg_t* err)
 {
-	// the global scope context for the entire program
-	if (!gscope_create(global_scope, err))
-		goto endparse;
-
 	// keep track of the current local scope we're in.
 	// initially we'll be in global scope (NULL function scope)
 	struct function_t* function_scope = NULL;

@@ -34,6 +34,25 @@ char token_list[N_TOKENS][MAX_TOKEN_LIST_LEN] = {
 	"}"	
 };
 
+size_t tkn_get_bytes_size(enum token_type_e token)
+{
+	switch (token)
+	{
+		case INT8:
+			return 1;
+		case INT16:
+			return 2;
+		case INT32:
+			return 4;
+		case INT64:
+			return 8;
+		default:
+			return 0;
+	}
+
+	return 0;
+}
+
 void tkn_create(
 	struct token_t* token,
 	const char* token_text,
