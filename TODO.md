@@ -28,7 +28,7 @@
 * Check if variable name already exists (either parameter or local stack) when creating new variable inside function
 * Add support for expressions during assignment/defintions (e.g., `int32 x = 3 + y - 1 * 5 / z`) - will need to translate these in a special way
 * Create source file for all instructions (and their correct suffixes) called `asm_instructions.c` - this is very similar to `asm_registers.c` which contain all the registers used.
-* In function calls, add 7th parameters onwards onto the stack (currently these are unaccounted for)
+* Put all of parameters into stack inside function, then allocate any additional local variables. This is incase any of the registers happen to be used as temp registers, we will always have access to them on the stack.
 * Add built-in functions like `printf`, `malloc`, etc. Some basic foundation started in `objects/built_in_functions.h`
 
 # NICE TO HAVE:
