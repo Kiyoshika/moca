@@ -115,9 +115,13 @@ void gscope_free(
 	free(global_scope->functions);
 	global_scope->functions = NULL;
 
+	for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
+		func_proto_free(&global_scope->built_in_functions[i]);
 	free(global_scope->built_in_functions);
 	global_scope->built_in_functions = NULL;
 
+	for (size_t i = 0; i < global_scope->n_variables; ++i)
+		variable_free(&global_scope->variables[i]);
 	free(global_scope->variables);
 	global_scope->variables = NULL;
 }

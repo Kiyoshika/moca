@@ -173,6 +173,8 @@ static bool _parse_function_call_args(
 				temp_token.type = STRING;
 				temp_token.category = DATATYPE;
 
+				free(str_value);
+
 				tkn_array_push(&arg_buffer, &temp_token);
 				(*token_buffer_idx)++; // skip last double quote after parsing string
 				break;
