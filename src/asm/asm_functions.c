@@ -320,6 +320,14 @@ static bool _asm_function_write_instructions(
 						&variable_stack_position,
 						&variable_bytes_size))
 					{
+						// validate expected type
+						if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[variable_idx].variable.type)
+							|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[variable_idx]))
+						{
+							err_write(err, "Passed incorrect type to function.", 0, 0);
+							return false;
+						}
+
 						// if variable is a STRING, then pass 8 bytes to get the largest register size (since
 						// we actually pass the address of the string, which is 8 bytes)
 						if (function->variables[variable_idx].type == STRING)

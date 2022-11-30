@@ -4,7 +4,7 @@
 ## BUGS:
 * Providing non-existant moca file to comiler frontend causes it to crash
 * Function names break with underscores (similar to before with variable names)
-* Passing a variable that holds an integer to `printf` in the first argument doesn't throw an error (when it should) like it does for passing numerical literals
+* No error is thrown when calling a function that is not initialised
 
 ## LOGS:
 * Add logging for each major step (tokenizer, parser, writing function instruction, etc.) to make things a lot easier to debug
