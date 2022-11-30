@@ -294,8 +294,6 @@ static bool _asm_function_write_instructions(
 						return false;
 					}
 				}
-				else
-					function_call_arg_counter++;
 				
 				
 				if ((!using_builtin_function && function_call_arg_counter + 1 > reference_function->n_parameters)
@@ -481,7 +479,17 @@ static bool _asm_function_write_instructions(
 					}
 				}
 
+				// if end of instructions or next instruction is not a new argument, validate
+				// that we passed the correct number of arguments
+				if ((i == function->n_instructions - 1 || function->instruction_code[i + 1] != ADD_ARG)
+					&& ((!using_builtin_function && function_call_arg_counter + 1 < reference_function->n_parameters)
+						|| (using_builtin_function && function_call_arg_counter + 1 < reference_built_in_function->n_parameters)))
+				{
+					err_write(err, "Passed fewer than expected arguments to function.", 0, 0);
+					return false;
+				}
 
+				function_call_arg_counter++;
 
 				break;
 			}
