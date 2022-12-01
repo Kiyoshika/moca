@@ -18,6 +18,11 @@ int main()
 
 	struct global_scope_t global_scope;
 	struct err_msg_t err;
+	if (!gscope_create(&global_scope, &err))
+	{
+		fprintf(stderr, "Failed to create global scope.\n");
+		return -1;
+	}
 	bool parsed = parse_tokens(&token_array, &global_scope, &err);
 
 	srcbuffer_free(&srcbuffer);
