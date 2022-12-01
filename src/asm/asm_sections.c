@@ -8,5 +8,5 @@ void asm_create_text_section(FILE* asm_file)
 
 void asm_create_data_section(FILE* asm_file)
 {
-	fprintf(asm_file, "%s\n", ".section .data");
+	fprintf(asm_file, "\n\n%s\n", ".section .data");
 }

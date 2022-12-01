@@ -96,13 +96,15 @@ static bool _initialize_variable(
 		struct global_scope_t* global_scope,
 		const struct function_t* function,
 		size_t function_idx,
+		const size_t parameter_stack_size,
 		struct err_msg_t* err)
 {
 	// TODO: this stack position does NOT currently
 	// account for 7th+ parameters (which get allocated
 	// on the stack)
 	size_t variable_idx = 0;
-	ssize_t variable_stack_position = 0;
+	// some stack space can be occupied by parameters, we allocate after those
+	ssize_t variable_stack_position = parameter_stack_size;
 	size_t variable_bytes_size = 0;
 
 	_find_variable_position(
@@ -133,7 +135,7 @@ static bool _initialize_variable(
 	// we're assigning (e.g., int32 x = [y] <--).
 	// We will need to move this into a temp register (say, %rbx)
 	// before moving that into the appropriate variable_stack_position
-	ssize_t variable_assign_stack_position = 0;
+	ssize_t variable_assign_stack_position = parameter_stack_size;
 	size_t variable_assign_bytes_size = 0;
 
 	if (_check_is_variable(
@@ -232,6 +234,7 @@ static bool _asm_function_write_instructions(
 		FILE* asm_file,
 		struct global_scope_t* global_scope,
 		const struct function_t* function,
+		const size_t parameter_stack_size,
 		struct err_msg_t* err)
 {
 	size_t function_call_arg_counter = 0;
@@ -245,7 +248,7 @@ static bool _asm_function_write_instructions(
 		{
 			case INIT_VAR: // initialize variable
 			{
-				if (_initialize_variable(asm_file, global_scope, function, i, err))
+				if (_initialize_variable(asm_file, global_scope, function, i, parameter_stack_size, err))
 					continue;
 				else
 					return false;
@@ -294,8 +297,6 @@ static bool _asm_function_write_instructions(
 						return false;
 					}
 				}
-				else
-					function_call_arg_counter++;
 				
 				
 				if ((!using_builtin_function && function_call_arg_counter + 1 > reference_function->n_parameters)
@@ -322,6 +323,14 @@ static bool _asm_function_write_instructions(
 						&variable_stack_position,
 						&variable_bytes_size))
 					{
+						// validate expected type
+						if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
+							|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[function_call_arg_counter]))
+						{
+							err_write(err, "Passed incorrect type to function.", 0, 0);
+							return false;
+						}
+
 						// if variable is a STRING, then pass 8 bytes to get the largest register size (since
 						// we actually pass the address of the string, which is 8 bytes)
 						if (function->variables[variable_idx].type == STRING)
@@ -481,7 +490,17 @@ static bool _asm_function_write_instructions(
 					}
 				}
 
+				// if end of instructions or next instruction is not a new argument, validate
+				// that we passed the correct number of arguments
+				if ((i == function->n_instructions - 1 || function->instruction_code[i + 1] != ADD_ARG)
+					&& ((!using_builtin_function && function_call_arg_counter + 1 < reference_function->n_parameters)
+						|| (using_builtin_function && function_call_arg_counter + 1 < reference_built_in_function->n_parameters)))
+				{
+					err_write(err, "Passed fewer than expected arguments to function.", 0, 0);
+					return false;
+				}
 
+				function_call_arg_counter++;
 
 				break;
 			}
@@ -516,8 +535,43 @@ bool asm_function_create(
 		fprintf(asm_file, "\t%s\n", "pushq %rbp");
 		fprintf(asm_file, "\t%s\n", "movq %rsp, %rbp");
 
+		// move function parameters into stack
+		struct function_t* function = &global_scope->functions[i];
+		size_t current_parameter = 0;
+		size_t registers_used = function->n_parameters > 6 ? 6 : function->n_parameters;
+		size_t current_stack_position = 0;
+		char register_text[5];
+		char mov_text[5];
+		memset(register_text, 0, 5);
+		memset(mov_text, 0, 5);
+		// first six parameters are in regsiters, remaining are on stack
+		for (current_parameter = 0; current_parameter < registers_used; ++current_parameter)
+		{
+			const struct variable_t* param_variable = &function->parameters[current_parameter].variable;
+			size_t param_size = 0;
+
+			// TODO: we wouldn't need this condition if we forced strings to be 8 bytes (variables.c??)
+			if (param_variable->type == STRING)
+				param_size = 8; // strings will be passed by address, so 8 bytes
+			else
+				param_size = param_variable->bytes_size;
+
+			_get_arg_register(&register_text, param_size, current_parameter);
+			current_stack_position += param_size;
+			_get_move_instruction(&mov_text, param_size);
+
+			// e.g., movq %rdi, -4(%rbp)
+			fprintf(asm_file, "\t%s %s, -%zu(%%rbp)\n",
+				mov_text, register_text, current_stack_position);
+		}
+		if (function->n_parameters > 6)
+		{
+			// TODO: push remaining parameters right-to-left onto stack
+			printf("TODO: push remaining parameters right-to-left onto stack.\n");
+		}
+
 		// translate function instructions into raw assembly
-		if (!_asm_function_write_instructions(asm_file, global_scope, &global_scope->functions[i], err))
+		if (!_asm_function_write_instructions(asm_file, global_scope, &global_scope->functions[i], current_stack_position, err))
 			return false;
 
 		// cleanup stack and restore base pointer
