@@ -36,7 +36,6 @@
 * Create source file for all instructions (and their correct suffixes) called `asm_instructions.c` - this is very similar to `asm_registers.c` which contain all the registers used.
 * Handle non-string global variables in `ADD_ARG` instruction inside `asm_functions.c`
 * Push 7th+ parameters onto stack in `ADD_ARG` instruction inside `asm_functions.c`
-* Allow usage of parameters inside function (currently parameters throw an "Unfound variable name" error when trying to use them because we don't search parameter space)
 
 ## NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.

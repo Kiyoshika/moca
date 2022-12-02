@@ -55,7 +55,7 @@ bool variable_set_type(
 		case STRING:
 		{
 			variable->type = STRING;
-			variable->bytes_size = 0; // will be set later
+			variable->bytes_size = 8; // we pass addresses of strings, which are 8 bytes
 			return true;
 		}
 		default:
