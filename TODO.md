@@ -3,7 +3,6 @@
 
 ## BUGS:
 * Providing non-existant moca file to comiler frontend causes it to crash
-* Function names break with underscores (similar to before with variable names)
 * No error is thrown when calling a function that is not initialised
 * Don't subtract stack space when allocating strings, this is wasting a lot of memory (all strings are going into data section, no need to subtract stack space)
 * Even when compiler fails, it generates partial assembly - only want to write the assembly if compilation succeeds
