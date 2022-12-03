@@ -299,12 +299,20 @@ static bool _asm_function_write_instructions(
 					// if function not in global scope, check built-in functions
 					if (!reference_function)
 					{
+						const char* arg_value = function->instruction_arg2[i];
 						for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
 						{
 							if (strcmp(function_name, global_scope->built_in_functions[i].name) == 0)
 							{
 								reference_built_in_function = &global_scope->built_in_functions[i];
 								using_builtin_function = true;
+
+								// SPECIAL CASE: if printf, take this first argument (string) and parse any string formatting
+								// to dynamically determine expected arguments
+								if (strcmp(function_name, "printf") == 0)
+									if (!built_in_functions_parse_printf_args(global_scope, arg_value, err))
+										return false;
+
 								break;
 							}
 						}
@@ -348,7 +356,27 @@ static bool _asm_function_write_instructions(
 						switch (is_parameter)
 						{
 							case false:
-								if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
+								// SPECIAL CASE: printf can take arbitrary integer types, e.g., '%d' format can be any of INT8, INT16, INT32 and INT64.
+								// Printf uses 'INT32' internally but can be any of the above types mentioned
+								if (using_builtin_function && strcmp(reference_built_in_function->name, "printf") == 0)
+								{
+									if (reference_built_in_function->parameter_types[function_call_arg_counter] == INT32)
+									{
+										switch (function->variables[variable_idx].type)
+										{
+											case INT8:
+											case INT16:
+											case INT32:
+											case INT64:
+												// valid
+												break;
+											default:
+												err_write(err, "Passed incorrect type according to printf format.", 0, 0);
+												return false;
+										}
+									}
+								}
+								else if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
 									|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[function_call_arg_counter]))
 								{
 									err_write(err, "Passed incorrect type to function.", 0, 0);
