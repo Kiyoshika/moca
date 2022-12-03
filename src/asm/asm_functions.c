@@ -35,8 +35,24 @@ static bool _find_variable_position(
 		const char* variable_name,
 		size_t* variable_idx,
 		ssize_t* variable_stack_position,
-		size_t* variable_bytes_size)
+		size_t* variable_bytes_size,
+		bool* is_parameter)
 {
+	size_t initial_stack_position = *variable_stack_position;
+	for (size_t i = 0; i < function->n_parameters; ++i)
+	{
+		*variable_stack_position += function->parameters[i].variable.bytes_size;
+		if (strcmp(function->parameters[i].variable.name, variable_name) == 0)
+		{
+			*variable_bytes_size = function->parameters[i].variable.bytes_size;
+			*variable_idx = i;
+			*is_parameter = true;
+			return true;
+		}
+	}
+	// if not parameter, reset stack position
+	*variable_stack_position = initial_stack_position;
+
 	for (size_t i = 0; i < function->n_variables; ++i)
 	{
 		*variable_stack_position += function->variables[i].bytes_size;
@@ -44,6 +60,7 @@ static bool _find_variable_position(
 		{
 			*variable_bytes_size = function->variables[i].bytes_size;
 			*variable_idx = i;
+			*is_parameter = false;
 			return true;
 		}
 	}
@@ -106,13 +123,15 @@ static bool _initialize_variable(
 	// some stack space can be occupied by parameters, we allocate after those
 	ssize_t variable_stack_position = parameter_stack_size;
 	size_t variable_bytes_size = 0;
+	bool is_parameter = false;
 
 	_find_variable_position(
 			function,
 			function->instruction_arg1[function_idx],
 			&variable_idx,
 			&variable_stack_position,
-			&variable_bytes_size);
+			&variable_bytes_size,
+			&is_parameter);
 
 	// string literals will be added to global scope
 	if (function->variables[variable_idx].type == STRING)
@@ -146,7 +165,8 @@ static bool _initialize_variable(
 			function->instruction_arg2[function_idx],
 			&variable_idx,
 			&variable_assign_stack_position,
-			&variable_assign_bytes_size))
+			&variable_assign_bytes_size,
+			&is_parameter))
 		{
 			// TODO: add line & char information in
 			// variable_t, function_t, and parameter_t
@@ -257,7 +277,6 @@ static bool _asm_function_write_instructions(
 
 			case ADD_ARG:
 			{
-				
 				// to support multiple function calls, reset the current argument counter
 				// prior to making a new function call
 				if (i == 0 || function->instruction_code[i-1] != ADD_ARG)
@@ -280,12 +299,20 @@ static bool _asm_function_write_instructions(
 					// if function not in global scope, check built-in functions
 					if (!reference_function)
 					{
+						const char* arg_value = function->instruction_arg2[i];
 						for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
 						{
 							if (strcmp(function_name, global_scope->built_in_functions[i].name) == 0)
 							{
 								reference_built_in_function = &global_scope->built_in_functions[i];
 								using_builtin_function = true;
+
+								// SPECIAL CASE: if printf, take this first argument (string) and parse any string formatting
+								// to dynamically determine expected arguments
+								if (strcmp(function_name, "printf") == 0)
+									if (!built_in_functions_parse_printf_args(global_scope, arg_value, err))
+										return false;
+
 								break;
 							}
 						}
@@ -312,6 +339,7 @@ static bool _asm_function_write_instructions(
 				size_t variable_bytes_size = 0;
 				char arg_register_text[5];
 				char mov_text[5];
+				bool is_parameter = false;
 
 				if (_check_is_variable(
 						function->instruction_arg2[i]))
@@ -321,19 +349,55 @@ static bool _asm_function_write_instructions(
 						function->instruction_arg2[i],
 						&variable_idx,
 						&variable_stack_position,
-						&variable_bytes_size))
+						&variable_bytes_size,
+						&is_parameter))
 					{
 						// validate expected type
-						if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
-							|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[function_call_arg_counter]))
+						switch (is_parameter)
 						{
-							err_write(err, "Passed incorrect type to function.", 0, 0);
-							return false;
+							case false:
+								// SPECIAL CASE: printf can take arbitrary integer types, e.g., '%d' format can be any of INT8, INT16, INT32 and INT64.
+								// Printf uses 'INT32' internally but can be any of the above types mentioned
+								if (using_builtin_function && strcmp(reference_built_in_function->name, "printf") == 0)
+								{
+									if (reference_built_in_function->parameter_types[function_call_arg_counter] == INT32)
+									{
+										switch (function->variables[variable_idx].type)
+										{
+											case INT8:
+											case INT16:
+											case INT32:
+											case INT64:
+												// valid
+												break;
+											default:
+												err_write(err, "Passed incorrect type according to printf format.", 0, 0);
+												return false;
+										}
+									}
+								}
+								else if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
+									|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[function_call_arg_counter]))
+								{
+									err_write(err, "Passed incorrect type to function.", 0, 0);
+									return false;
+								}
+							break;
+
+							case true:
+								if ((!using_builtin_function && function->parameters[variable_idx].variable.type != reference_function->parameters[function_call_arg_counter].variable.type)
+									|| (using_builtin_function && function->parameters[variable_idx].variable.type != reference_built_in_function->parameter_types[function_call_arg_counter]))
+								{
+									err_write(err, "Passed incorrect type to function.", 0, 0);
+									return false;
+								}
+							break;
 						}
 
 						// if variable is a STRING, then pass 8 bytes to get the largest register size (since
 						// we actually pass the address of the string, which is 8 bytes)
-						if (function->variables[variable_idx].type == STRING)
+						if ((is_parameter && function->parameters[variable_idx].variable.type == STRING)
+							|| (!is_parameter && function->variables[variable_idx].type == STRING))
 							variable_bytes_size = 8;
 
 						// fetch variable value

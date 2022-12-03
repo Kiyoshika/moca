@@ -18,4 +18,12 @@ bool built_in_functions_create(
 	struct global_scope_t* global_scope,
 	struct err_msg_t* err);
 
+// take a formatted string (from a call to printf) to build
+// the printf prototype in order to validate arguments when making
+// the function call
+bool built_in_functions_parse_printf_args(
+	struct global_scope_t* global_scope,
+	const char* formatted_string,
+	struct err_msg_t* err);
+
 #endif
