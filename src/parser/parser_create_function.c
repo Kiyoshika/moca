@@ -1,3 +1,4 @@
+#include "parser_create_function_return.h"
 #include "parser_create_function_call.h"
 #include "parser_create_function.h"
 #include "parser_create_variable.h"
@@ -270,6 +271,22 @@ bool parser_create_function(
 				token_buffer_idx++; // move past ';'
 				tkn_array_clear(&function_buffer);
 
+				break;
+			}
+
+			// return statement from function
+			case RETURN:
+			{
+				success = parser_create_function_return(
+						global_scope,
+						&function,
+						token_buffer,
+						&token_buffer_idx,
+						&function_buffer,
+						err);
+
+				if (!success)
+					goto endparse;
 				break;
 			}
 
