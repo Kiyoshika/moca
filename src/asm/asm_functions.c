@@ -555,6 +555,7 @@ static bool _add_variable_arg(
 		struct function_t* reference_function,
 		struct function_prototype_t* reference_built_in_function,
 		const size_t function_call_arg_counter,
+		const size_t parameter_stack_size,
 		struct err_msg_t* err)
 {
 	size_t variable_idx = 0;
@@ -625,6 +626,10 @@ static bool _add_variable_arg(
 			}
 			else // otherwise it's a local variable (or parameter)
 			{
+				// if using local variable, need to shift stack past parameters
+				if (!is_parameter)
+					variable_stack_position += parameter_stack_size;
+
 				// move variable from stack into appropriate register
 				// e.g., movq -12(%rsp), %rdi
 				_get_move_instruction(&mov_text, variable_bytes_size);
@@ -694,6 +699,7 @@ static bool _add_argument(
 			*reference_function,
 			*reference_built_in_function,
 			*function_call_arg_counter,
+			parameter_stack_size,
 			err))
 			return false;
 	}
