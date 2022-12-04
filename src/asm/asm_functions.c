@@ -250,16 +250,497 @@ static bool _get_arg_register(
 	return true;
 }
 
+static bool _set_arg_counter(
+		struct global_scope_t* global_scope,
+		struct function_t* function,
+		const size_t instruction_idx,
+		bool* using_builtin_function,
+		struct function_t** reference_function,
+		struct function_prototype_t** reference_built_in_function,
+		size_t* function_call_arg_counter,
+		struct err_msg_t* err)
+{
+	if (instruction_idx == 0 || function->instruction_code[instruction_idx-1] != ADD_ARG)
+	{
+		*reference_function = NULL;
+		*function_call_arg_counter = 0;
+
+		char function_name[FUNCTION_NAME_LEN];
+		memcpy(function_name, function->instruction_arg1[instruction_idx], FUNCTION_NAME_LEN);
+
+		for (size_t i = 0; i < global_scope->n_functions; ++i)
+		{
+			if (strcmp(function_name, global_scope->functions[i].name) == 0)
+			{
+				*reference_function = &global_scope->functions[i];
+				*using_builtin_function = false;
+				break;
+			}
+		}
+
+		// if function not in global scope, check built-in functions
+		if (!*reference_function)
+		{
+			const char* arg_value = function->instruction_arg2[instruction_idx];
+			for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
+			{
+				if (strcmp(function_name, global_scope->built_in_functions[i].name) == 0)
+				{
+					*reference_built_in_function = &global_scope->built_in_functions[i];
+					*using_builtin_function = true;
+
+					// SPECIAL CASE: if printf, take this first argument (string) and parse any string formatting
+					// to dynamically determine expected arguments
+					if (strcmp(function_name, "printf") == 0)
+						if (!built_in_functions_parse_printf_args(global_scope, arg_value, err))
+							return false;
+
+					break;
+				}
+			}
+		}
+
+		if (!*reference_function && !*using_builtin_function)
+		{
+			err_write(err, "Unknown function.", 0, 0);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static bool _validate_arg_type(
+		const bool is_parameter,
+		const bool using_builtin_function,
+		struct function_t* function,
+		struct function_t* reference_function,
+		struct function_prototype_t* reference_built_in_function,
+		const size_t function_call_arg_counter,
+		const size_t variable_idx,
+		struct err_msg_t* err)
+{
+	switch (is_parameter)
+	{
+		case false:
+			// SPECIAL CASE: printf can take arbitrary integer types, e.g., '%d' format can be any of INT8, INT16, INT32 and INT64.
+			// Printf uses 'INT32' internally but can be any of the above types mentioned
+			if (using_builtin_function && strcmp(reference_built_in_function->name, "printf") == 0)
+			{
+				if (reference_built_in_function->parameter_types[function_call_arg_counter] == INT32)
+				{
+					switch (function->variables[variable_idx].type)
+					{
+						case INT8:
+						case INT16:
+						case INT32:
+						case INT64:
+							// valid
+							break;
+						default:
+							err_write(err, "Passed incorrect type according to printf format.", 0, 0);
+							return false;
+					}
+				}
+			}
+			else if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
+				|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[function_call_arg_counter]))
+			{
+				err_write(err, "Passed incorrect type to function.", 0, 0);
+				return false;
+			}
+		break;
+
+		case true:
+			if ((!using_builtin_function && function->parameters[variable_idx].variable.type != reference_function->parameters[function_call_arg_counter].variable.type)
+				|| (using_builtin_function && function->parameters[variable_idx].variable.type != reference_built_in_function->parameter_types[function_call_arg_counter]))
+			{
+				err_write(err, "Passed incorrect type to function.", 0, 0);
+				return false;
+			}
+		break;
+	}
+
+	return true;
+}
+
+// adding a string literal (called from _add_literal_arg())
+static bool _add_string_literal_arg(
+		FILE* asm_file,
+		struct global_scope_t* global_scope,
+		struct function_t* function,
+		char* literal_value,
+		const bool using_builtin_function,
+		const size_t function_call_arg_counter,
+		struct function_t* reference_function,
+		struct function_prototype_t* reference_built_in_function,
+		struct err_msg_t* err)
+{
+	if ((!using_builtin_function && reference_function->parameters[function_call_arg_counter].variable.type != STRING)
+			|| (using_builtin_function && reference_built_in_function->parameter_types[function_call_arg_counter] != STRING))
+	{
+		err_write(err, "Tried to pass string to an integer parameter.", 0, 0);
+		return false;
+	}
+
+	bool needs_allocation = true;
+	size_t global_var_idx = 0;
+	for (size_t i = 0; i < global_scope->n_variables; ++i)
+	{
+		if (strcmp(literal_value, global_scope->variables[i].value) == 0)
+		{
+			needs_allocation = false;
+			global_var_idx = i;
+			return true;
+		}
+	}
+
+	if (needs_allocation)
+	{
+		// add to global scope with a name created from
+		// the current function name and global scope idx
+		char name[VARIABLE_NAME_LEN];
+		memset(name, 0, VARIABLE_NAME_LEN);
+		memcpy(name, function->name, 47); // use up to 47 chars of function name
+		char inttostr[100]; // maximum of 999 global variables supported
+		sprintf(inttostr, "%zu", global_scope->n_variables);
+		strncat(name, inttostr, 3);
+
+		struct variable_t new_global;
+		variable_create(&new_global);
+
+		variable_set_type(&new_global, STRING, err);
+		variable_set_name(&new_global, name, err);
+		variable_set_value(&new_global, literal_value, err);
+		variable_set_initialized(&new_global, true);
+
+		if (!gscope_add_variable(global_scope, &new_global, err))
+			return false;
+
+		global_var_idx = global_scope->n_variables - 1;
+	}
+
+	char arg_register_text[5];
+	memset(arg_register_text, 0, 5);
+
+	bool is_stack = _get_arg_register(
+			&arg_register_text,
+			8, // pointers are 8 bytes
+			function_call_arg_counter);
+
+	if (is_stack)
+	{
+		printf("PUSH ARG ONTO STACK\n");
+	}
+	else
+	{
+		// load address into register
+		// e.g., leaq name(%rip), %rdi
+		fprintf(asm_file, "\tleaq %s(%%rip), %s\n",
+			global_scope->variables[global_var_idx].name, arg_register_text);
+	}
+
+	return true;
+}
+
+// adding a numerical literal (called from _add_literal_arg())
+static bool _add_numeric_literal_arg(
+		FILE* asm_file,
+		struct global_scope_t* global_scope,
+		const char* literal_value,
+		const bool using_builtin_function,
+		const size_t function_call_arg_counter,
+		struct function_t* reference_function,
+		struct function_prototype_t* reference_built_in_function,
+		struct err_msg_t* err)
+{
+	// since it's a numerical literal, we don't know the size so we
+	// lookup the expected size
+	if ((!using_builtin_function && reference_function->parameters[function_call_arg_counter].variable.type == STRING)
+		|| (using_builtin_function && reference_built_in_function->parameter_types[function_call_arg_counter] == STRING))
+	{
+		err_write(err, "Tried to pass integer to a string parameter.", 0, 0);
+		return false;
+	}
+
+	size_t expected_size; 
+	if (!using_builtin_function)
+		expected_size = reference_function->parameters[function_call_arg_counter].variable.bytes_size;
+	else
+		expected_size = reference_built_in_function->parameter_byte_sizes[function_call_arg_counter];
+
+	char arg_register_text[5];
+	memset(arg_register_text, 0, 5);
+
+	char mov_text[5];
+	memset(mov_text, 0, 5);
+
+	// move the literal into correct register
+	// e.g., movq $12, %rdi
+	bool is_stack = _get_arg_register(
+			&arg_register_text,
+			expected_size,
+			function_call_arg_counter);
+
+	if (is_stack)
+	{
+		// TODO: push variable onto stack
+		printf("PUSH ARG ONTO STACK\n");
+	}
+	else
+	{
+		_get_move_instruction(&mov_text, expected_size);
+		fprintf(asm_file, "\t%s $%s, %s\n",
+				mov_text, literal_value, arg_register_text);
+	}
+
+	return true;
+}
+
+// argument passed to function is a literal value (numeric or string)
+// e.g., 13 or "hey"
+static bool _add_literal_arg(
+		FILE* asm_file,
+		struct global_scope_t* global_scope,
+		struct function_t* function,
+		char* literal_value,
+		const bool using_builtin_function,
+		struct function_t* reference_function,
+		struct function_prototype_t* reference_built_in_function,
+		const size_t function_call_arg_counter,
+		struct err_msg_t* err)
+{
+	// if string literal, check global scope if this string value already exists
+	// (then we wouldn't need to allocate another one)
+	if (literal_value[0] == '"')
+	{
+		if (!_add_string_literal_arg(
+			asm_file,
+			global_scope,
+			function,
+			literal_value,
+			using_builtin_function,
+			function_call_arg_counter,
+			reference_function,
+			reference_built_in_function,
+			err))
+			return false;
+	}
+	else
+	{
+		if (!_add_numeric_literal_arg(
+			asm_file,
+			global_scope,
+			literal_value,
+			using_builtin_function,
+			function_call_arg_counter,
+			reference_function,
+			reference_built_in_function,
+			err))
+			return false;
+	}
+
+	return true;
+}
+
+// argument passed to function is a variable name format (e.g., myvar123)
+// this will attempt to extract the value/size/position and move it into
+// appropriate register or stack
+static bool _add_variable_arg(
+		FILE* asm_file,
+		struct global_scope_t* global_scope,
+		struct function_t* function,
+		const char* variable_name,
+		bool using_builtin_function,
+		struct function_t* reference_function,
+		struct function_prototype_t* reference_built_in_function,
+		const size_t function_call_arg_counter,
+		struct err_msg_t* err)
+{
+	size_t variable_idx = 0;
+	ssize_t variable_stack_position = 0;
+	size_t variable_bytes_size = 0;
+	bool is_parameter = false;
+
+	char mov_text[5];
+	char arg_register_text[5];
+	memset(mov_text, 0, 5);
+	memset(arg_register_text, 0, 5);
+
+	if (_find_variable_position(
+			function,
+			variable_name,
+			&variable_idx,
+			&variable_stack_position,
+			&variable_bytes_size,
+			&is_parameter))
+	{
+		// validate expected type
+		if (!_validate_arg_type(
+			is_parameter,
+			using_builtin_function,
+			function,
+			reference_function,
+			reference_built_in_function,
+			function_call_arg_counter,
+			variable_idx,
+			err))
+			return false;
+
+		// if variable is a STRING, then pass 8 bytes to get the largest register size (since
+		// we actually pass the address of the string, which is 8 bytes)
+		if ((is_parameter && function->parameters[variable_idx].variable.type == STRING)
+			|| (!is_parameter && function->variables[variable_idx].type == STRING))
+			variable_bytes_size = 8;
+
+		// fetch variable value
+		bool is_stack = _get_arg_register(
+				&arg_register_text,
+				variable_bytes_size,
+				function_call_arg_counter);
+
+		if (is_stack)
+		{
+			// TODO: push variable onto stack
+			printf("PUSH ARG ONTO STACK\n");
+		}
+		else
+		{
+			size_t global_var_idx = 0;
+			if (_is_global_variable( // check if it's a global variable
+				global_scope,
+				variable_name,
+				&global_var_idx))
+			{
+				// if global varaible is a string, we'll use leaq instead of mov
+				if (global_scope->variables[global_var_idx].type == STRING)
+				{
+					fprintf(asm_file, "\tleaq %s(%%rip), %s\n",
+						global_scope->variables[global_var_idx].name, arg_register_text);
+				}
+				else
+				{
+					// TODO: handle global variables that are not strings
+				}
+			}
+			else // otherwise it's a local variable (or parameter)
+			{
+				// move variable from stack into appropriate register
+				// e.g., movq -12(%rsp), %rdi
+				_get_move_instruction(&mov_text, variable_bytes_size);
+
+				fprintf(asm_file, "\t%s -%zu(%%rsp), %s\n",
+						mov_text, variable_stack_position, arg_register_text);
+			}
+		}
+	}
+	else
+	{
+		// TODO: add line & char position
+		err_write(err, "Unknown variable name.", 0, 0);
+		return false;
+	}
+
+	return true;
+}
+
+// add argument to function call (move into register or push onto stack)
+static bool _add_argument(
+		FILE* asm_file,
+		struct global_scope_t* global_scope,
+		struct function_t* function,
+		const size_t instruction_idx,
+		const size_t parameter_stack_size,
+		bool* using_builtin_function,
+		size_t* function_call_arg_counter,
+		struct function_t** reference_function,
+		struct function_prototype_t** reference_built_in_function,
+		struct err_msg_t* err)
+{
+	// to support multiple function calls, reset the current argument counter
+	// prior to making a new function call (or increment counter if we are
+	// passing another argument)
+	if (!_set_arg_counter(
+			global_scope,
+			function,
+			instruction_idx,
+			using_builtin_function,
+			reference_function,
+			reference_built_in_function,
+			function_call_arg_counter,
+			err))
+		return false;
+		
+	
+	if ((!*using_builtin_function && *function_call_arg_counter + 1 > (*reference_function)->n_parameters)
+		|| (*using_builtin_function && *function_call_arg_counter + 1 > (*reference_built_in_function)->n_parameters))
+	{
+		err_write(err, "Passed too many arguments to function.", 0, 0);
+		return false;
+	}
+
+	/* check if argument is a variable name or literal value */
+
+	// variable format (e.g., myvar123)
+	if (_check_is_variable(
+			function->instruction_arg2[instruction_idx]))
+	{
+		if (!_add_variable_arg(
+			asm_file,
+			global_scope,
+			function,
+			function->instruction_arg2[instruction_idx],
+			*using_builtin_function,
+			*reference_function,
+			*reference_built_in_function,
+			*function_call_arg_counter,
+			err))
+			return false;
+	}
+	// either numeric or string literal (e.g., 13 or "hey")
+	else 
+	{
+		if (!_add_literal_arg(
+			asm_file,
+			global_scope,
+			function,
+			function->instruction_arg2[instruction_idx],
+			*using_builtin_function,
+			*reference_function,
+			*reference_built_in_function,
+			*function_call_arg_counter,
+			err))
+			return false;
+
+	}
+
+	// if end of instructions or next instruction is not a new argument, validate
+	// that we passed the correct number of arguments
+	if ((instruction_idx == function->n_instructions - 1 || function->instruction_code[instruction_idx + 1] != ADD_ARG)
+		&& ((!*using_builtin_function && *function_call_arg_counter + 1 < (*reference_function)->n_parameters)
+			|| (*using_builtin_function && *function_call_arg_counter + 1 < (*reference_built_in_function)->n_parameters)))
+	{
+		err_write(err, "Passed fewer than expected arguments to function.", 0, 0);
+		return false;
+	}
+
+	(*function_call_arg_counter)++;
+
+	return true;
+}
+
 static bool _asm_function_write_instructions(
 		FILE* asm_file,
 		struct global_scope_t* global_scope,
-		const struct function_t* function,
+		struct function_t* function,
 		const size_t parameter_stack_size,
 		struct err_msg_t* err)
 {
+	// need to maintain state here so we can pass by address
+	// for subsequent calls to ADD_ARG
 	size_t function_call_arg_counter = 0;
-	struct function_t* reference_function = NULL;
 	bool using_builtin_function = false;
+	struct function_t* reference_function = NULL;
 	struct function_prototype_t* reference_built_in_function = NULL;
 
 	for (size_t i = 0; i < function->n_instructions; ++i)
@@ -268,304 +749,31 @@ static bool _asm_function_write_instructions(
 		{
 			case INIT_VAR: // initialize variable
 			{
-				if (_initialize_variable(asm_file, global_scope, function, i, parameter_stack_size, err))
-					continue;
-				else
+				if (!_initialize_variable(
+						asm_file, 
+						global_scope, 
+						function, 
+						i, 
+						parameter_stack_size, 
+						err))
 					return false;
 				break;
 			}
 
 			case ADD_ARG:
 			{
-				// to support multiple function calls, reset the current argument counter
-				// prior to making a new function call
-				if (i == 0 || function->instruction_code[i-1] != ADD_ARG)
-				{
-					reference_function = NULL;
-					function_call_arg_counter = 0;
-
-					char function_name[FUNCTION_NAME_LEN];
-					memcpy(function_name, function->instruction_arg1[i], FUNCTION_NAME_LEN);
-
-					for (size_t i = 0; i < global_scope->n_functions; ++i)
-					{
-						if (strcmp(function_name, global_scope->functions[i].name) == 0)
-						{
-							reference_function = &global_scope->functions[i];
-							break;
-						}
-					}
-
-					// if function not in global scope, check built-in functions
-					if (!reference_function)
-					{
-						const char* arg_value = function->instruction_arg2[i];
-						for (size_t i = 0; i < global_scope->n_built_in_functions; ++i)
-						{
-							if (strcmp(function_name, global_scope->built_in_functions[i].name) == 0)
-							{
-								reference_built_in_function = &global_scope->built_in_functions[i];
-								using_builtin_function = true;
-
-								// SPECIAL CASE: if printf, take this first argument (string) and parse any string formatting
-								// to dynamically determine expected arguments
-								if (strcmp(function_name, "printf") == 0)
-									if (!built_in_functions_parse_printf_args(global_scope, arg_value, err))
-										return false;
-
-								break;
-							}
-						}
-					}
-
-					if (!reference_function && !using_builtin_function)
-					{
-						err_write(err, "Unknown function.", 0, 0);
-						return false;
-					}
-				}
-				
-				
-				if ((!using_builtin_function && function_call_arg_counter + 1 > reference_function->n_parameters)
-					|| (using_builtin_function && function_call_arg_counter + 1 > reference_built_in_function->n_parameters))
-				{
-					err_write(err, "Passed too many arguments to function.", 0, 0);
-					return false;
-				}
-
-				// check if argument is a variable name
-				size_t variable_idx = 0;
-				ssize_t variable_stack_position = 0;
-				size_t variable_bytes_size = 0;
-				char arg_register_text[5];
-				char mov_text[5];
-				bool is_parameter = false;
-
-				if (_check_is_variable(
-						function->instruction_arg2[i]))
-				{
-					if (_find_variable_position(
+				if (!_add_argument(
+						asm_file,
+						global_scope,
 						function,
-						function->instruction_arg2[i],
-						&variable_idx,
-						&variable_stack_position,
-						&variable_bytes_size,
-						&is_parameter))
-					{
-						// validate expected type
-						switch (is_parameter)
-						{
-							case false:
-								// SPECIAL CASE: printf can take arbitrary integer types, e.g., '%d' format can be any of INT8, INT16, INT32 and INT64.
-								// Printf uses 'INT32' internally but can be any of the above types mentioned
-								if (using_builtin_function && strcmp(reference_built_in_function->name, "printf") == 0)
-								{
-									if (reference_built_in_function->parameter_types[function_call_arg_counter] == INT32)
-									{
-										switch (function->variables[variable_idx].type)
-										{
-											case INT8:
-											case INT16:
-											case INT32:
-											case INT64:
-												// valid
-												break;
-											default:
-												err_write(err, "Passed incorrect type according to printf format.", 0, 0);
-												return false;
-										}
-									}
-								}
-								else if ((!using_builtin_function && function->variables[variable_idx].type != reference_function->parameters[function_call_arg_counter].variable.type)
-									|| (using_builtin_function && function->variables[variable_idx].type != reference_built_in_function->parameter_types[function_call_arg_counter]))
-								{
-									err_write(err, "Passed incorrect type to function.", 0, 0);
-									return false;
-								}
-							break;
-
-							case true:
-								if ((!using_builtin_function && function->parameters[variable_idx].variable.type != reference_function->parameters[function_call_arg_counter].variable.type)
-									|| (using_builtin_function && function->parameters[variable_idx].variable.type != reference_built_in_function->parameter_types[function_call_arg_counter]))
-								{
-									err_write(err, "Passed incorrect type to function.", 0, 0);
-									return false;
-								}
-							break;
-						}
-
-						// if variable is a STRING, then pass 8 bytes to get the largest register size (since
-						// we actually pass the address of the string, which is 8 bytes)
-						if ((is_parameter && function->parameters[variable_idx].variable.type == STRING)
-							|| (!is_parameter && function->variables[variable_idx].type == STRING))
-							variable_bytes_size = 8;
-
-						// fetch variable value
-						bool is_stack = _get_arg_register(
-								&arg_register_text,
-								variable_bytes_size,
-								function_call_arg_counter);
-
-						if (is_stack)
-						{
-							// TODO: push variable onto stack
-							printf("PUSH ARG ONTO STACK\n");
-						}
-						else
-						{
-							size_t global_var_idx = 0;
-							if (_is_global_variable(
-								global_scope,
-								function->instruction_arg2[i],
-								&global_var_idx))
-							{
-								// if global varaible is a string, we'll use leaq instead of mov
-								if (global_scope->variables[global_var_idx].type == STRING)
-								{
-									fprintf(asm_file, "\tleaq %s(%%rip), %s\n",
-										global_scope->variables[global_var_idx].name, arg_register_text);
-								}
-								else
-								{
-									// TODO: handle global variables that are not strings
-								}
-							}
-							else
-							{
-								// move variable from stack into appropriate register
-								// e.g., movq -12(%rsp), %rdi
-								_get_move_instruction(&mov_text, variable_bytes_size);
-
-								fprintf(asm_file, "\t%s -%zu(%%rsp), %s\n",
-										mov_text, variable_stack_position, arg_register_text);
-							}
-						}
-					}
-					else
-					{
-						// TODO: add line & char position
-						err_write(err, "Unknown variable name.", 0, 0);
-						return false;
-					}
-					
-				}
-				else // either numeric or string literal
-				{
-					// if string literal, check global scope if this string value already exists
-					// (then we wouldn't need to allocate another one)
-					if (function->instruction_arg2[i][0] == '"')
-					{
-						if ((!using_builtin_function && reference_function->parameters[function_call_arg_counter].variable.type != STRING)
-							|| (using_builtin_function && reference_built_in_function->parameter_types[function_call_arg_counter] != STRING))
-						{
-							err_write(err, "Tried to pass string to an integer parameter.", 0, 0);
-							return false;
-						}
-
-						bool needs_allocation = true;
-						size_t global_var_idx = 0;
-						for (size_t i = 0; i < global_scope->n_variables; ++i)
-						{
-							if (strcmp(function->instruction_arg2[i], global_scope->variables[i].value) == 0)
-							{
-								needs_allocation = false;
-								global_var_idx = i;
-								break;
-							}
-						}
-
-						if (needs_allocation)
-						{
-							// add to global scope with a name created from
-							// the current function name and global scope idx
-							char name[VARIABLE_NAME_LEN];
-							memset(name, 0, VARIABLE_NAME_LEN);
-							memcpy(name, function->name, 47); // use up to 47 chars of function name
-							char inttostr[100]; // maximum of 999 global variables supported
-							sprintf(inttostr, "%zu", global_scope->n_variables);
-							strncat(name, inttostr, 3);
-
-							struct variable_t new_global;
-							variable_create(&new_global);
-
-							variable_set_type(&new_global, STRING, err);
-							variable_set_name(&new_global, name, err);
-							variable_set_value(&new_global, function->instruction_arg2[i], err);
-							variable_set_initialized(&new_global, true);
-
-							if (!gscope_add_variable(global_scope, &new_global, err))
-								return false;
-
-							global_var_idx = global_scope->n_variables - 1;
-						}
-
-						bool is_stack = _get_arg_register(
-								&arg_register_text,
-								8, // pointers are 8 bytes
-								function_call_arg_counter);
-
-						if (is_stack)
-						{
-							printf("PUSH ARG ONTO STACK\n");
-						}
-						else
-						{
-							// load address into register
-							// e.g., leaq name(%rip), %rdi
-							fprintf(asm_file, "\tleaq %s(%%rip), %s\n",
-								global_scope->variables[global_var_idx].name, arg_register_text);
-						}
-					}
-					else
-					{
-						// since it's a numerical literal, we don't know the size so we
-						// lookup the expected size
-						if ((!using_builtin_function && reference_function->parameters[function_call_arg_counter].variable.type == STRING)
-							|| (using_builtin_function && reference_built_in_function->parameter_types[function_call_arg_counter] == STRING))
-						{
-							err_write(err, "Tried to pass integer to a string parameter.", 0, 0);
-							return false;
-						}
-
-						size_t expected_size; 
-						if (!using_builtin_function)
-							expected_size = reference_function->parameters[function_call_arg_counter].variable.bytes_size;
-						else
-							expected_size = reference_built_in_function->parameter_byte_sizes[function_call_arg_counter];
-
-						// move the literal into correct register
-						// e.g., movq $12, %rdi
-						bool is_stack = _get_arg_register(
-								&arg_register_text,
-								expected_size,
-								function_call_arg_counter);
-
-						if (is_stack)
-						{
-							// TODO: push variable onto stack
-							printf("PUSH ARG ONTO STACK\n");
-						}
-						else
-						{
-							_get_move_instruction(&mov_text, expected_size);
-							fprintf(asm_file, "\t%s $%s, %s\n",
-									mov_text, function->instruction_arg2[i], arg_register_text);
-						}
-					}
-				}
-
-				// if end of instructions or next instruction is not a new argument, validate
-				// that we passed the correct number of arguments
-				if ((i == function->n_instructions - 1 || function->instruction_code[i + 1] != ADD_ARG)
-					&& ((!using_builtin_function && function_call_arg_counter + 1 < reference_function->n_parameters)
-						|| (using_builtin_function && function_call_arg_counter + 1 < reference_built_in_function->n_parameters)))
-				{
-					err_write(err, "Passed fewer than expected arguments to function.", 0, 0);
+						i,
+						parameter_stack_size,
+						&using_builtin_function,
+						&function_call_arg_counter,
+						&reference_function,
+						&reference_built_in_function,
+						err))
 					return false;
-				}
-
-				function_call_arg_counter++;
-
 				break;
 			}
 

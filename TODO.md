@@ -13,7 +13,6 @@
 ## CLEANUP
 * `_parse_variable` function inside `parser_create_variable.c` could use some cleanup, it's pretty messy
 * All the string formatting in `asm_function.c` could use some cleanup. Currently a bunch of `%s` chained together, but could use more "clever"/cleaner formatting
-* Break up the logic for `ADD_ARG` instruction in `asm_functions.c` into smaller function components instead of the crazy long mess it is currently.
 
 # TESTS:
 * Add return values back into `function_definition.moca` - after some changes to the parser, having return values will break since they are not implemented yet
