@@ -391,7 +391,6 @@ static bool _add_string_literal_arg(
 		{
 			needs_allocation = false;
 			global_var_idx = i;
-			return true;
 		}
 	}
 

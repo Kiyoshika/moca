@@ -203,7 +203,9 @@ bool parser_create_function(
 			&& token_buffer->token[token_buffer_idx].type != CLOSE_BRACE)
 	{
 
-		switch (token_buffer->token[token_buffer_idx].category)
+
+		tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
+		switch (function_buffer.token[function_buffer.length - 1].category)
 		{
 			// defining variable in local scope
 			case DATATYPE:
@@ -240,7 +242,7 @@ bool parser_create_function(
 				break;
 		}
 
-		switch (token_buffer->token[token_buffer_idx].type)
+		switch (function_buffer.token[function_buffer.length - 1].type)
 		{
 			// making function call (all tokens up to this point should be the function name)
 			case OPEN_PAREN:
@@ -257,7 +259,6 @@ bool parser_create_function(
 					goto endparse;
 
 				// checking for semicolon after parsing function
-				token_buffer_idx++; // move past ')' after parsing
 				if (token_buffer_idx == token_buffer->length
 					|| token_buffer->token[token_buffer_idx].type != END_STATEMENT)
 				{
@@ -294,7 +295,6 @@ bool parser_create_function(
 				break;
 		}
 
-		tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
 	}
 
 endparse:
