@@ -1,3 +1,4 @@
+#include "parser_create_function_return.h"
 #include "parser_create_function_call.h"
 #include "parser_create_function.h"
 #include "parser_create_variable.h"
@@ -202,7 +203,9 @@ bool parser_create_function(
 			&& token_buffer->token[token_buffer_idx].type != CLOSE_BRACE)
 	{
 
-		switch (token_buffer->token[token_buffer_idx].category)
+
+		tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
+		switch (function_buffer.token[function_buffer.length - 1].category)
 		{
 			// defining variable in local scope
 			case DATATYPE:
@@ -239,7 +242,7 @@ bool parser_create_function(
 				break;
 		}
 
-		switch (token_buffer->token[token_buffer_idx].type)
+		switch (function_buffer.token[function_buffer.length - 1].type)
 		{
 			// making function call (all tokens up to this point should be the function name)
 			case OPEN_PAREN:
@@ -256,7 +259,6 @@ bool parser_create_function(
 					goto endparse;
 
 				// checking for semicolon after parsing function
-				token_buffer_idx++; // move past ')' after parsing
 				if (token_buffer_idx == token_buffer->length
 					|| token_buffer->token[token_buffer_idx].type != END_STATEMENT)
 				{
@@ -273,16 +275,39 @@ bool parser_create_function(
 				break;
 			}
 
+			// return statement from function
+			case RETURN:
+			{
+				success = parser_create_function_return(
+						global_scope,
+						&function,
+						token_buffer,
+						&token_buffer_idx,
+						&function_buffer,
+						err);
+
+				if (!success)
+					goto endparse;
+				break;
+			}
+
 			default:
 				break;
 		}
 
-		tkn_array_push(&function_buffer, &token_buffer->token[token_buffer_idx++]);
 	}
 
 endparse:
 	if (!success)
 	{
+		tkn_array_free(&function_buffer);
+		return false;
+	}
+	// TODO: whenever we introduce VOID return types, this
+	// check will become optional
+	if (!function.contains_return_statement)
+	{
+		err_write(err, "Function must contain a return statement.", 0, 0);
 		tkn_array_free(&function_buffer);
 		return false;
 	}

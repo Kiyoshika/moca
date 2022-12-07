@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#define N_TOKENS 31
+#define N_TOKENS 32
 #define MAX_TOKEN_LIST_LEN 10
 
 // ENSURE THIS IS SORTED IN ASCII ORDER ASCENDING
@@ -41,6 +41,7 @@ enum token_type_e
 	INT32,
 	INT64,
 	INT8,
+	RETURN,
 	STRING,
 	OPEN_BRACE, 		// {
 	LOGICAL_OR,			// ||

@@ -23,6 +23,9 @@ static bool _extract_function_name(
 
 	for (size_t i = 0; i < token_buffer->length; ++i)
 	{
+		if (token_buffer->token[i].type == OPEN_PAREN)
+			break;
+
 		char* new_name_token = token_buffer->token[i].text;
 
 		if (function_call_name_len + strlen(new_name_token) > FUNCTION_NAME_LEN - 1)
@@ -137,8 +140,6 @@ static bool _parse_function_call_args(
 	bool function_is_closed = false;
 	size_t open_paren_index = *token_buffer_idx;
 
-	(*token_buffer_idx)++; // skip '(' from function call
-
 	struct token_array_t arg_buffer;
 	tkn_array_create(&arg_buffer, 10);
 
@@ -180,9 +181,9 @@ static bool _parse_function_call_args(
 				break;
 
 			case COMMA: 
-				if (!_add_arg_to_function(function, function_name, &arg_buffer, err))
-					return false;
 				(*token_buffer_idx)++;
+				_add_arg_to_function(function, function_name, &arg_buffer, err);
+				tkn_array_clear(&arg_buffer);
 				break;
 
 			default:
@@ -213,6 +214,7 @@ endwhile:
 	}
 
 	tkn_array_free(&arg_buffer);
+	(*token_buffer_idx)++;
 	return true;
 }
 

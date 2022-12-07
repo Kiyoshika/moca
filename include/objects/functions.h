@@ -18,9 +18,10 @@ struct err_msg_t;
 
 enum instruction_code_e
 {
-	INIT_VAR, 	// intialize variable
-	ADD_ARG, 	// add argument to function
-	CALL_FUNC 	// make function call
+	INIT_VAR, 		// intialize variable
+	ADD_ARG, 		// add argument to function
+	CALL_FUNC, 		// make function call
+	RETURN_FUNC		// return from function
 };
 
 struct function_t
@@ -38,6 +39,7 @@ struct function_t
 	size_t variables_capacity;
 
 	bool is_defined; // if function is defined or only declared
+	bool contains_return_statement;
 
 	// handing instructions to translate to assembly
 	size_t n_instructions;

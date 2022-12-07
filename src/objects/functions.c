@@ -30,6 +30,7 @@ bool function_create(
 	function->n_variables = 0;
 
 	function->is_defined = false;
+	function->contains_return_statement = false;
 
 	function->n_instructions = 0;
 	function->instruction_capacity = 10;
