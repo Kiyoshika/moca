@@ -303,6 +303,14 @@ endparse:
 		tkn_array_free(&function_buffer);
 		return false;
 	}
+	// TODO: whenever we introduce VOID return types, this
+	// check will become optional
+	if (!function.contains_return_statement)
+	{
+		err_write(err, "Function must contain a return statement.", 0, 0);
+		tkn_array_free(&function_buffer);
+		return false;
+	}
 	success = gscope_add_function(global_scope, &function, err);
 	tkn_array_free(&function_buffer);
 	return success;

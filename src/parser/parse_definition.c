@@ -17,9 +17,13 @@ bool parse_definition(
 	// the data type
 	enum token_type_e next_expected_token_types[7];
 	enum token_category_e next_expected_token_categories[5];
-	size_t next_expected_token_types_len = 0;
-	size_t next_expected_token_categories_len = 1;
+
+	next_expected_token_types[0] = SPACE;
+	next_expected_token_types[1] = TEXT;
+	size_t next_expected_token_types_len = 2;
+
 	next_expected_token_categories[0] = DATATYPE;
+	size_t next_expected_token_categories_len = 1;
 
 	// by default we'll assume we're creating a variable unless we hit
 	// specific function token (open parenthesis)

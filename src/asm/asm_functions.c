@@ -28,6 +28,18 @@ static bool _check_is_variable(const char* argvalue)
 	return true;
 }
 
+// get the total stack size of all parameters
+// that we can use to offset for fetching local variables (non-parameters)
+size_t _get_parameter_stack_size(
+		const struct function_t* function)
+{
+	size_t parameter_stack_size = 0;
+	for (size_t i = 0; i < function->n_parameters; ++i)
+		parameter_stack_size += function->parameters[i].variable.bytes_size;
+
+	return parameter_stack_size;
+}
+
 // find position of variable on the stack (in bytes)
 // returns false  if not found, otherwise returns true
 static bool _find_variable_position(
@@ -304,6 +316,77 @@ static bool _set_arg_counter(
 		{
 			err_write(err, "Unknown function.", 0, 0);
 			return false;
+		}
+	}
+
+	return true;
+}
+
+enum token_type_e _get_variable_type(
+		const struct function_t* function,
+		const size_t stack_position)
+{
+	size_t _stack_pos = 0;
+	for (size_t i = 0; i < function->n_parameters; ++i)
+	{
+		_stack_pos += function->parameters[i].variable.bytes_size;
+		if (_stack_pos == stack_position)
+			return function->parameters[i].variable.type;
+	}
+
+	for (size_t i = 0; i < function->n_variables; ++i)
+	{
+		_stack_pos += function->variables[i].bytes_size;
+		if (_stack_pos == stack_position)
+			return function->variables[i].type;
+	}
+
+	return NONE; // technically should be unreachable
+				 // as the variable is guaranteed to exist
+				 // by this point
+}
+
+static bool _validate_return_type(
+		const struct function_t* function,
+		enum token_type_e return_type,
+		const char* return_value,
+		bool is_variable,
+		struct err_msg_t* err)
+{
+	if (is_variable && return_type != function->return_type)
+	{
+		err_write(err, "Returned value does not match function return type.", 0, 0);
+		return false;
+	}
+
+	bool is_numeric_literal = return_value[0] == '"' ? false : true;
+	if (!is_variable)
+	{
+		// TODO: can probably provide explicit checks like
+		// if returning 10000 from a int8 function (which would overflow)
+		switch (function->return_type)
+		{
+			case INT8:
+			case INT16:
+			case INT32:
+			case INT64:
+				if (!is_numeric_literal)
+				{
+					err_write(err, "Returned value does not match function return type.", 0, 0);
+					return false;
+				}
+				break;
+
+			case STRING:
+				if (is_numeric_literal)
+				{
+					err_write(err, "Returned value does not match function return type.", 0, 0);
+					return false;
+				}
+				break;
+
+			default:
+				break;
 		}
 	}
 
@@ -728,6 +811,82 @@ static bool _add_argument(
 	return true;
 }
 
+static bool _return_function(
+		FILE* asm_file,
+		const struct function_t* function,
+		const char* return_value,
+		struct err_msg_t* err)
+{
+
+	char mov_text[5];
+	char return_register_text[5];
+
+	if (_check_is_variable(return_value))
+	{
+		size_t variable_idx = 0;
+		ssize_t variable_stack_position = 0;
+		size_t variable_bytes_size = 0;
+		bool is_parameter = false;
+		if (!_find_variable_position(
+				function,
+				return_value,
+				&variable_idx,
+				&variable_stack_position,
+				&variable_bytes_size,
+				&is_parameter))
+		{
+			// TODO: add line & char information in
+			// variable_t, function_t and parameter_t
+			err_write(err, "Unknown variable name.", 0, 0);
+			return false;
+		}
+
+		// for local variables, we want to offset the stack position
+		// by the total stack size occupied by parameters
+		if (!is_parameter)
+			variable_stack_position += _get_parameter_stack_size(function);
+
+
+		enum token_type_e return_type = _get_variable_type(function, variable_stack_position);
+		if (!_validate_return_type(
+				function, 
+				return_type, 
+				return_value,
+				true,
+				err))
+			return false;
+
+		_get_move_instruction(&mov_text, variable_bytes_size);
+		asm_get_rax_register(&return_register_text, variable_bytes_size);
+
+		// move variable from stack into rax register to return from function
+		fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
+				mov_text, variable_stack_position, return_register_text);
+	}
+	else // numeric or string literal
+	{
+		if (!_validate_return_type(
+				function,
+				NONE,
+				return_value,
+				false,
+				err))
+			return false;
+
+		size_t return_size = tkn_get_bytes_size(function->return_type);
+
+		_get_move_instruction(&mov_text, return_size);
+		asm_get_rax_register(&return_register_text, return_size);
+
+		// TODO: add support for string literals
+		fprintf(asm_file, "\t%s $%s, %s\n",
+				mov_text, return_value, return_register_text);
+
+	}
+
+	return true;
+}
+
 static bool _asm_function_write_instructions(
 		FILE* asm_file,
 		struct global_scope_t* global_scope,
@@ -783,6 +942,17 @@ static bool _asm_function_write_instructions(
 					fprintf(asm_file, "\txor %%al, %%al\n");
 
 				fprintf(asm_file, "\tcall %s\n", function->instruction_arg1[i]);
+				break;
+			}
+
+			case RETURN_FUNC:
+			{
+				if (!_return_function(
+						asm_file,
+						function,
+						function->instruction_arg2[i],
+						err))
+					return false;
 				break;
 			}
 
