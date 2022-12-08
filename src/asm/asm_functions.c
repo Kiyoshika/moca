@@ -8,6 +8,7 @@
 #include "err_msg.h"
 #include "built_in_functions.h"
 #include "function_prototype.h"
+#include "util.h"
 
 // check if assignment value (arg2) is a variable (if it's alphanumeric and contains at least one letter)
 static bool _check_is_variable(const char* argvalue)
@@ -466,41 +467,11 @@ static bool _add_string_literal_arg(
 		return false;
 	}
 
-	bool needs_allocation = true;
-	size_t global_var_idx = 0;
-	for (size_t i = 0; i < global_scope->n_variables; ++i)
-	{
-		if (strcmp(literal_value, global_scope->variables[i].value) == 0)
-		{
-			needs_allocation = false;
-			global_var_idx = i;
-		}
-	}
-
-	if (needs_allocation)
-	{
-		// add to global scope with a name created from
-		// the current function name and global scope idx
-		char name[VARIABLE_NAME_LEN];
-		memset(name, 0, VARIABLE_NAME_LEN);
-		memcpy(name, function->name, 47); // use up to 47 chars of function name
-		char inttostr[100]; // maximum of 999 global variables supported
-		sprintf(inttostr, "%zu", global_scope->n_variables);
-		strncat(name, inttostr, 3);
-
-		struct variable_t new_global;
-		variable_create(&new_global);
-
-		variable_set_type(&new_global, STRING, err);
-		variable_set_name(&new_global, name, err);
-		variable_set_value(&new_global, literal_value, err);
-		variable_set_initialized(&new_global, true);
-
-		if (!gscope_add_variable(global_scope, &new_global, err))
-			return false;
-
-		global_var_idx = global_scope->n_variables - 1;
-	}
+	size_t global_var_idx = util_get_global_string_literal(
+			global_scope,
+			function,
+			literal_value,
+			err);
 
 	char arg_register_text[5];
 	memset(arg_register_text, 0, 5);
@@ -813,11 +784,11 @@ static bool _add_argument(
 
 static bool _return_function(
 		FILE* asm_file,
+		struct global_scope_t* global_scope,
 		const struct function_t* function,
 		const char* return_value,
 		struct err_msg_t* err)
 {
-
 	char mov_text[5];
 	char return_register_text[5];
 
@@ -859,9 +830,17 @@ static bool _return_function(
 		_get_move_instruction(&mov_text, variable_bytes_size);
 		asm_get_rax_register(&return_register_text, variable_bytes_size);
 
-		// move variable from stack into rax register to return from function
-		fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
+		if (return_type == STRING)
+		{
+			fprintf(asm_file, "\tleaq %s(%%rip), %%rax\n",
+					return_value);
+		}
+		else
+		{
+			// move variable from stack into rax register to return from function
+			fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
 				mov_text, variable_stack_position, return_register_text);
+		}
 	}
 	else // numeric or string literal
 	{
@@ -879,8 +858,31 @@ static bool _return_function(
 		asm_get_rax_register(&return_register_text, return_size);
 
 		// TODO: add support for string literals
-		fprintf(asm_file, "\t%s $%s, %s\n",
+		if (return_value[0] == '"')
+		{
+			size_t global_var_idx = util_get_global_string_literal(
+					global_scope,
+					function,
+					return_value,
+					err);
+			char var_name[VARIABLE_NAME_LEN];
+			memset(var_name, 0, VARIABLE_NAME_LEN);
+			const char* name = global_scope->variables[global_var_idx].name;
+			size_t name_len = strlen(name);
+			name_len = name_len > (size_t)VARIABLE_NAME_LEN - 1 ? (size_t)VARIABLE_NAME_LEN - 1 : name_len;
+			memcpy(var_name, global_scope->variables[global_var_idx].name, name_len);
+			var_name[name_len] = '\0';
+
+			// strings will always use rax since they are the
+			// largest size (8 bytes)
+			fprintf(asm_file, "\tleaq %s(%%rip), %%rax\n",
+					var_name);
+		}
+		else
+		{
+			fprintf(asm_file, "\t%s $%s, %s\n",
 				mov_text, return_value, return_register_text);
+		}
 
 	}
 
@@ -947,8 +949,11 @@ static bool _asm_function_write_instructions(
 
 			case RETURN_FUNC:
 			{
+				// TODO: change instruction_arg1[i] to be the variable name
+				// TODO: change instruction_arg2[i] to be the variable value
 				if (!_return_function(
 						asm_file,
+						global_scope,
 						function,
 						function->instruction_arg2[i],
 						err))

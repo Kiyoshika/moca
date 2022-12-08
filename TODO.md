@@ -36,6 +36,7 @@
 * Push 7th+ parameters onto stack in `ADD_ARG` instruction inside `asm_functions.c`
 * Change the main function logic to move the return value into rdi from rax
 * Add support for returning string literals (currently only supports variable and numeric literal)
+	* This is in progress, need to change function instruction arguments for `RETURN_FUNC` where the first argument is the variable name and the second argument is the actual value. This is so we can look it up in global scope to fetch the proper name.
 
 ## NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.
