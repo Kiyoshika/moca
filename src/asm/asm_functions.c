@@ -167,7 +167,7 @@ static bool _initialize_variable(
 	// we're assigning (e.g., int32 x = [y] <--).
 	// We will need to move this into a temp register (say, %rbx)
 	// before moving that into the appropriate variable_stack_position
-	ssize_t variable_assign_stack_position = parameter_stack_size;
+	ssize_t variable_assign_stack_position = 0;
 	size_t variable_assign_bytes_size = 0;
 
 	if (_check_is_variable(
@@ -198,6 +198,9 @@ static bool _initialize_variable(
 		// e.g., movq -12(%rbp), %rbx
 		char rbp_register_text[5];
 		asm_get_rbp_register(&rbp_register_text);
+
+		if (!is_parameter)
+			variable_assign_stack_position += parameter_stack_size;
 
 		fprintf(asm_file, "\t%s%s%zu(%s), %s\n",
 				assign_mov_text, " -", variable_assign_stack_position,
