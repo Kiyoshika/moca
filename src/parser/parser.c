@@ -63,9 +63,9 @@ bool parse_tokens(
 				{
 					case VARIABLE:
 						if (!function_scope)
-							parser_create_global_variable(global_scope, &token_buffer, err);
+							parser_create_global_variable(global_scope, NULL, &token_buffer, err);
 						else
-							parser_create_local_variable(function_scope, &token_buffer, err);
+							parser_create_local_variable(global_scope, function_scope, &token_buffer, err);
 						token_array_idx--;
 						break;
 

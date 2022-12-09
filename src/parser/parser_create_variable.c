@@ -19,6 +19,8 @@ static bool _set_and_return_error(
 }
 
 static bool _parse_variable(
+		struct global_scope_t* global_scope,
+		struct function_t* function,
 		struct variable_t* new_variable,
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
@@ -112,8 +114,11 @@ static bool _parse_variable(
 		if (!str_value)
 			return _set_and_return_error(err, token_buffer, initial_position);
 
-		variable_set_value(new_variable, str_value, err);
-		free(str_value);
+		util_get_global_string_literal(
+				global_scope,
+				function,
+				str_value,
+				err);
 
 		return true;
 	}
@@ -137,19 +142,20 @@ static bool _parse_variable(
 
 bool parser_create_global_variable(
 		struct global_scope_t* global_scope,
+		struct function_t* function,
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
 {
 	struct variable_t new_variable;
 	variable_create(&new_variable);
 
-	bool success = _parse_variable(&new_variable, token_buffer, err);
+	bool success = _parse_variable(global_scope, function, &new_variable, token_buffer, err);
 	if (!success)
 		return false;
 
-	success = gscope_add_variable(global_scope, &new_variable, err);
+	/*success = gscope_add_variable(global_scope, &new_variable, err);
 	if (!success)
-		return false;
+		return false;*/
 
 	tkn_array_clear(token_buffer);
 
@@ -158,6 +164,7 @@ bool parser_create_global_variable(
 }
 
 bool parser_create_local_variable(
+		struct global_scope_t* global_scope,
 		struct function_t* function_scope,
 		struct token_array_t* token_buffer,
 		struct err_msg_t* err)
@@ -165,11 +172,15 @@ bool parser_create_local_variable(
 	struct variable_t new_variable;
 	variable_create(&new_variable);
 
-	bool success = _parse_variable(&new_variable, token_buffer, err);
+	size_t global_vars = global_scope->n_variables;
+	bool success = _parse_variable(global_scope, function_scope, &new_variable, token_buffer, err);
 	if (!success)
 		return false;
 
-	success = function_add_variable(function_scope, &new_variable, err);
+	// only add to function if variable was not globally allocated (e.g., string)
+	if (global_vars == global_scope->n_variables)
+		success = function_add_variable(function_scope, &new_variable, err);
+
 	if (!success)
 		return false;
 

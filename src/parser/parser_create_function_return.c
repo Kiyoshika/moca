@@ -4,6 +4,8 @@
 #include "token.h"
 #include "global_scope.h"
 #include "err_msg.h"
+#include "util.h"
+#include "variables.h"
 
 bool parser_create_function_return(
 		struct global_scope_t* global_scope,
@@ -39,8 +41,8 @@ bool parser_create_function_return(
 			if (!function_write_instruction(
 					function, 
 					RETURN_FUNC, 
-					function->name,
 					function_buffer->token[0].text,
+					NULL,
 					err))
 				return false;
 
@@ -54,6 +56,38 @@ bool parser_create_function_return(
 		{
 			(*token_buffer_idx)++;
 			continue;
+		}
+
+		// parse string literal (may need to be allocated)
+		if (token_buffer->token[*token_buffer_idx].type == DOUBLE_QUOTE)
+		{
+			(*token_buffer_idx)++; // move past initial quote
+			char* string_literal = util_get_text_between_quotes(
+					token_buffer,
+					token_buffer_idx,
+					err);
+
+			if (!string_literal)
+				return false;
+
+			size_t global_var_idx = util_get_global_string_literal(
+					global_scope,
+					function,
+					string_literal,
+					err);
+
+			if (!function_write_instruction(
+					function, 
+					RETURN_FUNC, 
+					global_scope->variables[global_var_idx].name,
+					string_literal,
+					err))
+				return false;
+
+			free(string_literal);
+			(*token_buffer_idx)++; // move past semicolon
+			function->contains_return_statement = true;
+			return true;
 		}
 
 		tkn_array_push(function_buffer, &token_buffer->token[*token_buffer_idx]);

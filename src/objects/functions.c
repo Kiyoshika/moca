@@ -70,6 +70,7 @@ bool function_set_return_type(
 		case INT16:
 		case INT32:
 		case INT64:
+		case STRING:
 		{
 			function->return_type = return_type;
 			return true;

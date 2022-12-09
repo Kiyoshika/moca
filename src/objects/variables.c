@@ -101,7 +101,7 @@ void variable_set_signed(
 
 bool variable_set_value(
 		struct variable_t* variable,
-		char* valuestr,
+		const char* valuestr,
 		struct err_msg_t* err)
 {
 	if (variable->value)

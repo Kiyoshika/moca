@@ -59,7 +59,7 @@ void variable_set_signed(
 // set value to variable.
 bool variable_set_value(
 		struct variable_t* variable,
-		char* value,
+		const char* value,
 		struct err_msg_t* err);
 
 // deallocate memory from variable->value (if set)

@@ -2,6 +2,10 @@
 #include "token_array.h"
 #include "token.h"
 #include "err_msg.h"
+#include "global_scope.h"
+#include "functions.h"
+#include "variables.h"
+#include "err_msg.h"
 
 static bool _text_realloc(
 		char** text,
@@ -88,4 +92,49 @@ char* util_get_text_between_quotes(
 	}
 	
 	return text;
+}
+
+size_t util_get_global_string_literal(
+		struct global_scope_t* global_scope,
+		const struct function_t* function,
+		const char* string_literal_value,
+		struct err_msg_t* err)
+{
+	bool needs_allocation = true;
+	size_t global_var_idx = 0;
+	for (size_t i = 0; i < global_scope->n_variables; ++i)
+	{
+		if (strcmp(string_literal_value, global_scope->variables[i].value) == 0)
+		{
+			needs_allocation = false;
+			global_var_idx = i;
+		}
+	}
+
+	if (needs_allocation)
+	{
+		// add to global scope with a name created from
+		// the current function name and global scope idx
+		char name[VARIABLE_NAME_LEN];
+		memset(name, 0, VARIABLE_NAME_LEN);
+		if (function)
+			memcpy(name, function->name, 47); // use up to 47 chars of function name
+		char inttostr[100]; // maximum of 999 global variables supported
+		sprintf(inttostr, "%zu", global_scope->n_variables);
+		strncat(name, inttostr, 3);
+
+		struct variable_t new_global;
+		variable_create(&new_global);
+		variable_set_type(&new_global, STRING, err);
+		variable_set_name(&new_global, name, err);
+		variable_set_value(&new_global, string_literal_value, err);
+		variable_set_initialized(&new_global, true);
+
+		if (!gscope_add_variable(global_scope, &new_global, err))
+			return false;
+
+		global_var_idx = global_scope->n_variables - 1;
+	}
+
+	return global_var_idx;
 }
