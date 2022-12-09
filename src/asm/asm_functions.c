@@ -171,11 +171,11 @@ static bool _initialize_variable(
 	size_t variable_assign_bytes_size = 0;
 
 	if (_check_is_variable(
-			function->instruction_arg1[function_idx]))
+			function->instruction_arg2[function_idx]))
 	{
 		if (!_find_variable_position(
 			function,
-			function->instruction_arg1[function_idx],
+			function->instruction_arg2[function_idx],
 			&variable_idx,
 			&variable_assign_stack_position,
 			&variable_assign_bytes_size,
