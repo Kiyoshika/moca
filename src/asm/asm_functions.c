@@ -171,11 +171,11 @@ static bool _initialize_variable(
 	size_t variable_assign_bytes_size = 0;
 
 	if (_check_is_variable(
-			function->instruction_arg2[function_idx]))
+			function->instruction_arg1[function_idx]))
 	{
 		if (!_find_variable_position(
 			function,
-			function->instruction_arg2[function_idx],
+			function->instruction_arg1[function_idx],
 			&variable_idx,
 			&variable_assign_stack_position,
 			&variable_assign_bytes_size,
@@ -786,13 +786,14 @@ static bool _return_function(
 		FILE* asm_file,
 		struct global_scope_t* global_scope,
 		const struct function_t* function,
+		const char* variable_name,
 		const char* return_value,
 		struct err_msg_t* err)
 {
 	char mov_text[5];
 	char return_register_text[5];
 
-	if (_check_is_variable(return_value))
+	if (_check_is_variable(variable_name))
 	{
 		size_t variable_idx = 0;
 		ssize_t variable_stack_position = 0;
@@ -800,7 +801,7 @@ static bool _return_function(
 		bool is_parameter = false;
 		if (!_find_variable_position(
 				function,
-				return_value,
+				variable_name,
 				&variable_idx,
 				&variable_stack_position,
 				&variable_bytes_size,
@@ -955,6 +956,7 @@ static bool _asm_function_write_instructions(
 						asm_file,
 						global_scope,
 						function,
+						function->instruction_arg1[i],
 						function->instruction_arg2[i],
 						err))
 					return false;

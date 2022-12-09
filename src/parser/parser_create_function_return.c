@@ -5,6 +5,7 @@
 #include "global_scope.h"
 #include "err_msg.h"
 #include "util.h"
+#include "variables.h"
 
 bool parser_create_function_return(
 		struct global_scope_t* global_scope,
@@ -40,8 +41,8 @@ bool parser_create_function_return(
 			if (!function_write_instruction(
 					function, 
 					RETURN_FUNC, 
-					function->name,
 					function_buffer->token[0].text,
+					NULL,
 					err))
 				return false;
 
@@ -69,19 +70,19 @@ bool parser_create_function_return(
 			if (!string_literal)
 				return false;
 
-			if (!function_write_instruction(
-					function, 
-					RETURN_FUNC, 
-					function->name,
-					string_literal,
-					err))
-				return false;
-
-			util_get_global_string_literal(
+			size_t global_var_idx = util_get_global_string_literal(
 					global_scope,
 					function,
 					string_literal,
 					err);
+
+			if (!function_write_instruction(
+					function, 
+					RETURN_FUNC, 
+					global_scope->variables[global_var_idx].name,
+					string_literal,
+					err))
+				return false;
 
 			free(string_literal);
 			(*token_buffer_idx)++; // move past semicolon

@@ -124,7 +124,6 @@ size_t util_get_global_string_literal(
 
 		struct variable_t new_global;
 		variable_create(&new_global);
-
 		variable_set_type(&new_global, STRING, err);
 		variable_set_name(&new_global, name, err);
 		variable_set_value(&new_global, string_literal_value, err);

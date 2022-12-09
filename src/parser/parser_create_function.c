@@ -103,11 +103,12 @@ bool _extract_parameters(
 }
 
 bool _extract_variable_definition(
+		struct global_scope_t* global_scope,
 		struct function_t* function,
 		struct token_array_t* function_buffer,
 		struct err_msg_t* err)
 {
-	return parser_create_local_variable(function, function_buffer, err);
+	return parser_create_local_variable(global_scope, function, function_buffer, err);
 }
 
 // declaration: int32 func(int32 x, int32 y);
@@ -221,16 +222,21 @@ bool parser_create_function(
 				if (!success)
 					goto endparse;
 
-				success = _extract_variable_definition(&function, &function_buffer, err);
+				size_t global_vars = global_scope->n_variables;
+				success = _extract_variable_definition(global_scope, &function, &function_buffer, err);
 
 				if (!success)
 					goto endparse;
 
 				// add instruction to initialize a variable to certain value
-				const struct variable_t* variable = &function.variables[function.n_variables - 1];
-				success = function_write_instruction(&function, INIT_VAR, variable->name, variable->value, err);
-				if (!success)
-					goto endparse;
+				// only need to do this if variable was NOT allocated to global scope (e.g., strings)
+				if (global_vars == global_scope->n_variables)
+				{
+					const struct variable_t* variable = &function.variables[function.n_variables - 1];
+					success = function_write_instruction(&function, INIT_VAR, variable->name, variable->value, err);
+					if (!success)
+						goto endparse;
+				}
 
 				tkn_array_clear(&function_buffer);
 				continue;
