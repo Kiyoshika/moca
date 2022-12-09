@@ -117,7 +117,8 @@ size_t util_get_global_string_literal(
 		// the current function name and global scope idx
 		char name[VARIABLE_NAME_LEN];
 		memset(name, 0, VARIABLE_NAME_LEN);
-		memcpy(name, function->name, 47); // use up to 47 chars of function name
+		if (function)
+			memcpy(name, function->name, 47); // use up to 47 chars of function name
 		char inttostr[100]; // maximum of 999 global variables supported
 		sprintf(inttostr, "%zu", global_scope->n_variables);
 		strncat(name, inttostr, 3);

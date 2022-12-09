@@ -15,7 +15,6 @@
 * All the string formatting in `asm_function.c` could use some cleanup. Currently a bunch of `%s` chained together, but could use more "clever"/cleaner formatting
 
 # TESTS:
-* Add return values back into `function_definition.moca` - after some changes to the parser, having return values will break since they are not implemented yet
 * Update tests for parser_definition to check the correct `definition_type` enum (VARIABLE or FUNCTION)
 * Write tests for `variable_t`, `function_t`, `parameter_t` and `global_scope_t`
 * Add some more variable types and strings to the global variable tests
@@ -26,7 +25,6 @@
 	* Originally I had this, but it seemed to work without it...although to be extra safe I think I will subtract the stack space for all local variables
 * Add global variables to data section (if initialized) or bss section (if uninitialized)
 	* This currently works for strings, but not integer types
-* Implement return values (`asm_functions.c`)
 * Add line and char position information in `variable_t`, `function_t` and `parameter_t` which is used when encountering errors in `asm_functions.c`
 * When fetching variable stack position, account for any parameters that don't fit in the first 6 registers (`asm_functions.c`)
 * Check if variable name already exists (either parameter or local stack) when creating new variable inside function
@@ -35,8 +33,6 @@
 * Handle non-string global variables in `ADD_ARG` instruction inside `asm_functions.c`
 * Push 7th+ parameters onto stack in `ADD_ARG` instruction inside `asm_functions.c`
 * Change the main function logic to move the return value into rdi from rax
-* Add support for returning string literals (currently only supports variable and numeric literal)
-	* Almost finished, basically just need to change the move instructions for strings inside function and return statement to use movq instead of leaq. We only need to use leaq when making the function call (which is already finished), but inside the function (and the return statement) we can just move the address around and don't need to reference the global variable
 
 ## NICE TO HAVE:
 * Hardcode the SPACE token inside the `token_is_valid` function in `parse_definition.c` so we don't have to add it to the list of expected tokens each time.

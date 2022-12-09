@@ -828,20 +828,16 @@ static bool _return_function(
 				err))
 			return false;
 
-		_get_move_instruction(&mov_text, variable_bytes_size);
+		// strings are 8 bytes as we move the address rather than the contents
+		if (return_type == STRING)
+			_get_move_instruction(&mov_text, 8);
+		else
+			_get_move_instruction(&mov_text, variable_bytes_size);
 		asm_get_rax_register(&return_register_text, variable_bytes_size);
 
-		if (return_type == STRING)
-		{
-			fprintf(asm_file, "\tleaq %s(%%rip), %%rax\n",
-					return_value);
-		}
-		else
-		{
-			// move variable from stack into rax register to return from function
-			fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
-				mov_text, variable_stack_position, return_register_text);
-		}
+		// move variable from stack into rax register to return from function
+		fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
+			mov_text, variable_stack_position, return_register_text);
 	}
 	else // numeric or string literal
 	{
@@ -858,7 +854,6 @@ static bool _return_function(
 		_get_move_instruction(&mov_text, return_size);
 		asm_get_rax_register(&return_register_text, return_size);
 
-		// TODO: add support for string literals
 		if (return_value[0] == '"')
 		{
 			size_t global_var_idx = util_get_global_string_literal(
@@ -881,8 +876,11 @@ static bool _return_function(
 		}
 		else
 		{
+			// NOTE: this is slightly confusing because numerical literals
+			// are passed into the first argument, which is called
+			// "variable_name" in this case
 			fprintf(asm_file, "\t%s $%s, %s\n",
-				mov_text, return_value, return_register_text);
+				mov_text, variable_name, return_register_text);
 		}
 
 	}
