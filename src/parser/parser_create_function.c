@@ -138,29 +138,19 @@ bool parser_create_function(
 	// read function name until '('  (space tokens are not included in the buffer)
 	char new_function_name[FUNCTION_NAME_LEN];
 	memset(new_function_name, 0, FUNCTION_NAME_LEN);
-	size_t new_function_name_len = 0;
 
-	while (token_buffer_idx < token_buffer->length
-			&& token_buffer->token[token_buffer_idx].type != OPEN_PAREN)
-	{
-		char* new_name_token = token_buffer->token[token_buffer_idx].text;
+	const enum token_type_e terminating_tokens[1] = { OPEN_PAREN };
 
-		if (new_function_name_len + strlen(new_name_token) > FUNCTION_NAME_LEN - 1)
-		{
-			err_write(
-				err,
-				"Function name cannot exceed 50 characters.",
-				token_buffer->token[token_buffer_idx].line_num,
-				token_buffer->token[token_buffer_idx].char_pos);
+	if (!util_get_name_from_buffer(
+			new_function_name,
+			token_buffer,
+			&token_buffer_idx,
+			terminating_tokens,
+			1,
+			FUNCTION_NAME_LEN,
+			err))
+		return false;
 
-			return false;
-		}
-
-		strncat(new_function_name, new_name_token, strlen(new_name_token));
-		new_function_name_len += strlen(new_name_token);
-
-		token_buffer_idx++;
-	}
 
 	if (_function_name_reserved(new_function_name, err))
 		return false;

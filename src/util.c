@@ -21,6 +21,18 @@ static bool _text_realloc(
 	return true;
 }
 
+static bool _is_terminating_token(
+		const enum token_type_e token,
+		const enum token_type_e* terminating_tokens,
+		const size_t n_terminating_tokens)
+{
+	for (size_t i = 0; i < n_terminating_tokens; ++i)
+		if (token == terminating_tokens[i])
+			return true;
+
+	return false;
+}
+
 char* util_get_text_between_quotes(
 		struct token_array_t* token_buffer,
 		size_t* buffer_idx,
@@ -137,4 +149,42 @@ size_t util_get_global_string_literal(
 	}
 
 	return global_var_idx;
+}
+
+bool util_get_name_from_buffer(
+		char* name_buffer,
+		const struct token_array_t* token_buffer,
+		size_t* token_buffer_idx,
+		const enum token_type_e* terminating_tokens,
+		const size_t n_terminating_tokens,
+		const size_t max_name_len,
+		struct err_msg_t* err)
+{
+	size_t new_name_len = 0;
+	while (*token_buffer_idx < token_buffer->length
+			&& !_is_terminating_token(
+				token_buffer->token[*token_buffer_idx].type,
+				terminating_tokens,
+				n_terminating_tokens))
+	{
+		char* new_name_token = token_buffer->token[*token_buffer_idx].text;
+
+		if (new_name_len + strlen(new_name_token) > max_name_len - 1)
+		{
+			err_write(
+				err,
+				"Token name too long.",
+				token_buffer->token[*token_buffer_idx].line_num,
+				token_buffer->token[*token_buffer_idx].char_pos);
+
+			return false;
+		}
+
+		strncat(name_buffer, new_name_token, strlen(new_name_token));
+		new_name_len += strlen(new_name_token);
+
+		(*token_buffer_idx)++;
+	}
+
+	return true;
 }

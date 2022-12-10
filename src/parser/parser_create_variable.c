@@ -53,31 +53,18 @@ static bool _parse_variable(
 
 	char new_variable_name[VARIABLE_NAME_LEN]; // defined in include/objects/variables.h	
 	memset(new_variable_name, 0, VARIABLE_NAME_LEN);
-	size_t new_var_name_len = 0;
 	
 	// read variable name until '=' or ';' (space tokens are not included in the buffer)
-	while (token_buffer_idx < token_buffer->length
-			&& token_buffer->token[token_buffer_idx].type != ASSIGNMENT
-			&& token_buffer->token[token_buffer_idx].type != END_STATEMENT)
-	{
-		char* new_name_token = token_buffer->token[token_buffer_idx].text;
-
-		if (new_var_name_len + strlen(new_name_token) > VARIABLE_NAME_LEN - 1)
-		{
-			err_write(
-				err,
-				"Variable name cannot exceed 50 characters.",
-				token_buffer->token[token_buffer_idx].line_num,
-				token_buffer->token[token_buffer_idx].char_pos);
-
-			return false;
-		}
-
-		strncat(new_variable_name, new_name_token, strlen(new_name_token));
-		new_var_name_len += strlen(new_name_token);
-
-		token_buffer_idx++;
-	}
+	const enum token_type_e terminating_tokens[2] = { ASSIGNMENT, END_STATEMENT };
+	if (!util_get_name_from_buffer(
+			new_variable_name,
+			token_buffer,
+			&token_buffer_idx,
+			terminating_tokens,
+			2,
+			VARIABLE_NAME_LEN,
+			err))
+		return false;
 
 	success = variable_set_name(new_variable, new_variable_name, err);
 	if (!success)
