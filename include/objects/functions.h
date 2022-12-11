@@ -19,6 +19,7 @@ struct err_msg_t;
 enum instruction_code_e
 {
 	INIT_VAR, 		// intialize variable
+	ASSIGN_VAR,		// variable assignment
 	ADD_ARG, 		// add argument to function
 	CALL_FUNC, 		// make function call
 	RETURN_FUNC		// return from function

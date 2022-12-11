@@ -5,6 +5,7 @@
 #include "global_scope.h"
 #include "functions.h"
 #include "variables.h"
+#include "parameters.h"
 #include "err_msg.h"
 
 static bool _text_realloc(
@@ -185,6 +186,76 @@ bool util_get_name_from_buffer(
 
 		(*token_buffer_idx)++;
 	}
+
+	return true;
+}
+
+bool util_find_variable_position(
+		const struct function_t* function,
+		const char* variable_name,
+		size_t* variable_idx,
+		ssize_t* variable_stack_position,
+		size_t* variable_bytes_size,
+		bool* is_parameter)
+{
+	for (size_t i = 0; i < function->n_parameters; ++i)
+	{
+		*variable_stack_position += function->parameters[i].variable.bytes_size;
+		if (strcmp(function->parameters[i].variable.name, variable_name) == 0)
+		{
+			*variable_bytes_size = function->parameters[i].variable.bytes_size;
+			*variable_idx = i;
+			*is_parameter = true;
+			return true;
+		}
+	}
+
+	for (size_t i = 0; i < function->n_variables; ++i)
+	{
+		*variable_stack_position += function->variables[i].bytes_size;
+		if (strcmp(function->variables[i].name, variable_name) == 0)
+		{
+			*variable_bytes_size = function->variables[i].bytes_size;
+			*variable_idx = i;
+			*is_parameter = false;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool util_is_global_variable(
+		const struct global_scope_t* global_scope,
+		const char* variable_name,
+		size_t* global_var_idx)
+{
+	for (size_t i = 0; i < global_scope->n_variables; ++i)
+	{
+		if (strcmp(global_scope->variables[i].name, variable_name) == 0)
+		{
+			*global_var_idx = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool util_check_is_variable(const char* argvalue)
+{
+	bool contains_letter = false;
+	for (size_t i = 0; i < strlen(argvalue); ++i)
+	{
+		if (isalpha(argvalue[i]))
+			contains_letter = true;
+
+		if (!isalnum(argvalue[i]))
+			return false; // immediately fail if character is not alphanumeric
+	}
+
+	if (!contains_letter) // must have at least one letter
+		return false;
 
 	return true;
 }

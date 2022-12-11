@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+#include <ctype.h>
 
 // forward declarations
 struct err_msg_t;
@@ -42,5 +44,26 @@ bool util_get_name_from_buffer(
 		const size_t n_terminating_tokens,
 		const size_t max_name_len,
 		struct err_msg_t* err);
+
+// checks that the passed string is a valid variable name
+// (if it's alphanumeric and starts with a letter)
+bool util_check_is_variable(const char* name);
+
+// find position of variable on the stack (in bytes)
+// returns true if variable is found, false otherwise
+bool util_find_variable_position(
+		const struct function_t* function,
+		const char* variable_name,
+		size_t* variable_idx,
+		ssize_t* variable_stack_position,
+		size_t* variable_bytes_size,
+		bool* is_parameter);
+
+// check if given variable name is allocated in global scope
+// if found, returns true and writes index into [global_var_idx]
+bool util_is_global_variable(
+		const struct global_scope_t* global_scope,
+		const char* variable_name,
+		size_t* global_var_idx);
 
 #endif
