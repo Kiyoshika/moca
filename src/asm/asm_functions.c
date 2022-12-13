@@ -10,95 +10,6 @@
 #include "function_prototype.h"
 #include "util.h"
 
-// check if assignment value (arg2) is a variable (if it's alphanumeric and contains at least one letter)
-static bool _check_is_variable(const char* argvalue)
-{
-	bool contains_letter = false;
-	for (size_t i = 0; i < strlen(argvalue); ++i)
-	{
-		if (isalpha(argvalue[i]))
-			contains_letter = true;
-
-		if (!isalnum(argvalue[i]))
-			return false; // immediately fail if character is not alphanumeric
-	}
-
-	if (!contains_letter) // must have at least one letter
-		return false;
-
-	return true;
-}
-
-// get the total stack size of all parameters
-// that we can use to offset for fetching local variables (non-parameters)
-size_t _get_parameter_stack_size(
-		const struct function_t* function)
-{
-	size_t parameter_stack_size = 0;
-	for (size_t i = 0; i < function->n_parameters; ++i)
-		parameter_stack_size += function->parameters[i].variable.bytes_size;
-
-	return parameter_stack_size;
-}
-
-// find position of variable on the stack (in bytes)
-// returns false  if not found, otherwise returns true
-static bool _find_variable_position(
-		const struct function_t* function,
-		const char* variable_name,
-		size_t* variable_idx,
-		ssize_t* variable_stack_position,
-		size_t* variable_bytes_size,
-		bool* is_parameter)
-{
-	size_t initial_stack_position = *variable_stack_position;
-	for (size_t i = 0; i < function->n_parameters; ++i)
-	{
-		*variable_stack_position += function->parameters[i].variable.bytes_size;
-		if (strcmp(function->parameters[i].variable.name, variable_name) == 0)
-		{
-			*variable_bytes_size = function->parameters[i].variable.bytes_size;
-			*variable_idx = i;
-			*is_parameter = true;
-			return true;
-		}
-	}
-	// if not parameter, reset stack position
-	*variable_stack_position = initial_stack_position;
-
-	for (size_t i = 0; i < function->n_variables; ++i)
-	{
-		*variable_stack_position += function->variables[i].bytes_size;
-		if (strcmp(function->variables[i].name, variable_name) == 0)
-		{
-			*variable_bytes_size = function->variables[i].bytes_size;
-			*variable_idx = i;
-			*is_parameter = false;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-// check if variable is in global scope (currently only used for strings)
-static bool _is_global_variable(
-		const struct global_scope_t* global_scope,
-		const char* variable_name,
-		size_t* global_var_idx)
-{
-	for (size_t i = 0; i < global_scope->n_variables; ++i)
-	{
-		if (strcmp(global_scope->variables[i].name, variable_name) == 0)
-		{
-			*global_var_idx = i;
-			return true;
-		}
-	}
-
-	return false;
-}
-
 // TODO: move this into separate file asm_instructions.c
 static void _get_move_instruction(char (*move_text)[5], size_t size)
 {
@@ -134,11 +45,11 @@ static bool _initialize_variable(
 	// on the stack)
 	size_t variable_idx = 0;
 	// some stack space can be occupied by parameters, we allocate after those
-	ssize_t variable_stack_position = parameter_stack_size;
+	ssize_t variable_stack_position = 0; /*parameter_stack_size;*/
 	size_t variable_bytes_size = 0;
 	bool is_parameter = false;
 
-	_find_variable_position(
+	util_find_variable_position(
 			function,
 			function->instruction_arg1[function_idx],
 			&variable_idx,
@@ -170,10 +81,10 @@ static bool _initialize_variable(
 	ssize_t variable_assign_stack_position = 0;
 	size_t variable_assign_bytes_size = 0;
 
-	if (_check_is_variable(
+	if (util_check_is_variable(
 			function->instruction_arg2[function_idx]))
 	{
-		if (!_find_variable_position(
+		if (!util_find_variable_position(
 			function,
 			function->instruction_arg2[function_idx],
 			&variable_idx,
@@ -199,8 +110,8 @@ static bool _initialize_variable(
 		char rbp_register_text[5];
 		asm_get_rbp_register(&rbp_register_text);
 
-		if (!is_parameter)
-			variable_assign_stack_position += parameter_stack_size;
+		/*if (!is_parameter)
+			variable_assign_stack_position += parameter_stack_size;*/
 
 		fprintf(asm_file, "\t%s%s%zu(%s), %s\n",
 				assign_mov_text, " -", variable_assign_stack_position,
@@ -266,6 +177,11 @@ static bool _get_arg_register(
 	return true;
 }
 
+// if making a subsequent ADD_ARG instruction, increment the current argument counter.
+// if making a new function call, reste argument counter to 0.
+// this will also set the [reference_function] or [reference_built_in_function] pointers
+// depending on if you're adding subsequent ADD_ARG instructions or making a new function call
+// (which will switch the pointer)
 static bool _set_arg_counter(
 		struct global_scope_t* global_scope,
 		struct function_t* function,
@@ -326,6 +242,7 @@ static bool _set_arg_counter(
 	return true;
 }
 
+// search the function's stack for a variable to fetch its datatype
 enum token_type_e _get_variable_type(
 		const struct function_t* function,
 		const size_t stack_position)
@@ -624,7 +541,7 @@ static bool _add_variable_arg(
 	memset(mov_text, 0, 5);
 	memset(arg_register_text, 0, 5);
 
-	if (_find_variable_position(
+	if (util_find_variable_position(
 			function,
 			variable_name,
 			&variable_idx,
@@ -664,7 +581,7 @@ static bool _add_variable_arg(
 		else
 		{
 			size_t global_var_idx = 0;
-			if (_is_global_variable( // check if it's a global variable
+			if (util_is_global_variable( // check if it's a global variable
 				global_scope,
 				variable_name,
 				&global_var_idx))
@@ -683,14 +600,14 @@ static bool _add_variable_arg(
 			else // otherwise it's a local variable (or parameter)
 			{
 				// if using local variable, need to shift stack past parameters
-				if (!is_parameter)
-					variable_stack_position += parameter_stack_size;
+				/*if (!is_parameter)
+					variable_stack_position += parameter_stack_size;*/
 
 				// move variable from stack into appropriate register
 				// e.g., movq -12(%rsp), %rdi
 				_get_move_instruction(&mov_text, variable_bytes_size);
 
-				fprintf(asm_file, "\t%s -%zu(%%rsp), %s\n",
+				fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
 						mov_text, variable_stack_position, arg_register_text);
 			}
 		}
@@ -743,7 +660,7 @@ static bool _add_argument(
 	/* check if argument is a variable name or literal value */
 
 	// variable format (e.g., myvar123)
-	if (_check_is_variable(
+	if (util_check_is_variable(
 			function->instruction_arg2[instruction_idx]))
 	{
 		if (!_add_variable_arg(
@@ -802,13 +719,13 @@ static bool _return_function(
 	char mov_text[5];
 	char return_register_text[5];
 
-	if (_check_is_variable(variable_name))
+	if (util_check_is_variable(variable_name))
 	{
 		size_t variable_idx = 0;
 		ssize_t variable_stack_position = 0;
 		size_t variable_bytes_size = 0;
 		bool is_parameter = false;
-		if (!_find_variable_position(
+		if (!util_find_variable_position(
 				function,
 				variable_name,
 				&variable_idx,
@@ -824,8 +741,8 @@ static bool _return_function(
 
 		// for local variables, we want to offset the stack position
 		// by the total stack size occupied by parameters
-		if (!is_parameter)
-			variable_stack_position += _get_parameter_stack_size(function);
+		/*if (!is_parameter)
+			variable_stack_position += _get_parameter_stack_size(function);*/
 
 
 		enum token_type_e return_type = _get_variable_type(function, variable_stack_position);
@@ -897,6 +814,172 @@ static bool _return_function(
 	return true;
 }
 
+static bool _assign_variable_internal(
+		FILE* asm_file,
+		const struct global_scope_t* global_scope,
+		const struct function_t* function,
+		const char* instruction_arg1,
+		const char* instruction_arg2,
+		// REALLY need to move these into a struct... it's annoying
+		// having a billion variables moving around
+		size_t variable_idx,
+		size_t variable_stack_position,
+		size_t variable_bytes_size,
+		bool is_parameter,
+		struct err_msg_t* err)
+{
+	// check if assign value is a variable or literal
+	size_t assign_variable_idx = 0;
+	ssize_t assign_variable_stack_position = 0;
+	size_t assign_variable_bytes_size = 0;
+	bool assign_is_parameter = false;
+	if (util_find_variable_position(
+				function,
+				instruction_arg2,
+				&assign_variable_idx,
+				&assign_variable_stack_position,
+				&assign_variable_bytes_size,
+				&assign_is_parameter))
+	{
+		// validate types match
+		if (is_parameter && function->parameters[assign_variable_idx].variable.type != function->parameters[variable_idx].variable.type)
+		{
+			err_write(err, "Type mismatch when assigning value to variable.", 0, 0);
+			return false;
+		}
+		else if (!is_parameter && function->variables[assign_variable_idx].type != function->variables[variable_idx].type)
+		{
+			err_write(err, "Type mismatch when assigning value to variable.", 0, 0);
+			return false;
+		}
+
+		char mov_text[5];
+		memset(mov_text, 0, 5);
+
+		char temp_register[5];
+		memset(temp_register, 0, 5);
+
+		// fetch registers and move instruction that will be used
+		_get_move_instruction(&mov_text, variable_bytes_size);
+		asm_get_rbx_register(&temp_register, variable_bytes_size);
+
+		// NOTE: the sizes for the registers and move instruction
+		// will be based on the destination variable. So moving a
+		// 64 bit value into a 32 bit value will be treated as a 32 bit move
+
+		// use temp register (rbx) to move assignment variable's value
+		// e.g., movq -8(%rbp), %rbx
+		fprintf(asm_file, "\t%s -%zu(%%rbp), %s\n",
+				mov_text, assign_variable_stack_position, temp_register);
+
+		// move temp register into destination variable
+		// e.g., movq %rbx, -16(%rbp)
+		fprintf(asm_file, "\t%s %s, -%zu(%%rbp)\n",
+				mov_text, temp_register, variable_stack_position);
+	}
+	else // literal value
+	{
+		// at the moment strings are not supported (but will be later)
+		if (instruction_arg2[0] == '"')
+		{
+			err_write(err, "Assigning string literals is not yet supported.", 0, 0);
+			return false;
+		}
+
+		// validate types match
+		// yes, this is pretty ugly, but good enough for now
+		if (is_parameter 
+				&& instruction_arg2[0] == '"'
+				&& function->parameters[variable_idx].variable.type != STRING)
+		{
+			err_write(err, "Type mismatch when assigning value to variable.", 0, 0);
+			return false;
+		}
+		else if (!is_parameter
+					&& instruction_arg2[0] == '"'
+					&& function->variables[variable_idx].type != STRING)
+		{
+			err_write(err, "Type mismatch when assigning value to variable.", 0, 0);
+			return false;
+		}
+		else if (is_parameter
+					&& instruction_arg2[0] != '"'
+					&& function->parameters[variable_idx].variable.type == STRING)
+		{
+			err_write(err, "Type mismatch when assigning value to variable.", 0, 0);
+			return false;
+		}
+		else if (!is_parameter
+					&& instruction_arg2[0] != '"'
+					&& function->variables[variable_idx].type == STRING)
+		{
+			err_write(err, "Type mismatch when assigning value to variable.", 0, 0);
+			return false;
+		}
+
+		// fetch the move instruction size
+		char mov_text[5];
+		memset(mov_text, 0, 5);
+
+		_get_move_instruction(&mov_text, variable_bytes_size);
+
+		// move literal value into variable
+		// e.g., movq $20, -8(%rbp)
+		fprintf(asm_file, "\t%s $%s, -%zu(%%rbp)\n",
+				mov_text, instruction_arg2, variable_stack_position);
+	}
+
+	return true;
+}
+
+static bool _assign_variable(
+		FILE* asm_file,
+		const struct global_scope_t* global_scope,
+		const struct function_t* function,
+		const char* instruction_arg1,
+		const char* instruction_arg2,
+		struct err_msg_t* err)
+{
+	// TODO: break the variable & literal portions into their
+	// own functions to make it easier to read
+	
+	size_t variable_idx = 0;
+	ssize_t variable_stack_position = 0;
+	size_t variable_bytes_size = 0;
+	bool is_parameter = false;
+	if (util_find_variable_position( // local variable
+				function,
+				instruction_arg1,
+				&variable_idx,
+				&variable_stack_position,
+				&variable_bytes_size,
+				&is_parameter))
+	{
+		return _assign_variable_internal(
+				asm_file,
+				global_scope,
+				function,
+				instruction_arg1,
+				instruction_arg2,
+				variable_idx,
+				variable_stack_position,
+				variable_bytes_size,
+				is_parameter,
+				err);
+	}
+	else if (util_is_global_variable(  // global variable
+				global_scope,
+				instruction_arg1,
+				&variable_idx))
+	{
+		err_write(err, "Strings and global variables are currently unsupported (for now).", 0, 0);
+		return false;
+	}
+	
+	err_write(err, "Unknown variable name.", 0, 0);
+	return false;
+}
+
 static bool _asm_function_write_instructions(
 		FILE* asm_file,
 		struct global_scope_t* global_scope,
@@ -957,9 +1040,20 @@ static bool _asm_function_write_instructions(
 
 			case RETURN_FUNC:
 			{
-				// TODO: change instruction_arg1[i] to be the variable name
-				// TODO: change instruction_arg2[i] to be the variable value
 				if (!_return_function(
+						asm_file,
+						global_scope,
+						function,
+						function->instruction_arg1[i],
+						function->instruction_arg2[i],
+						err))
+					return false;
+				break;
+			}
+
+			case ASSIGN_VAR:
+			{
+				if (!_assign_variable(
 						asm_file,
 						global_scope,
 						function,
@@ -978,6 +1072,28 @@ static bool _asm_function_write_instructions(
 	return true;
 }
 
+// get the total occupied stack space from a function
+// (including parameters & locals) to subtract the NEAREST
+// multiple of 16 (rounded up).
+// This 16 byte alignment is required and will cause problems
+// if not obeyed (which I learned the hard way...)
+static size_t _get_function_total_stack_space(
+		const struct function_t* function)
+{
+	size_t stack_size = 0;
+
+	for (size_t p = 0; p < function->n_parameters; ++p)
+		stack_size += function->parameters[p].variable.bytes_size;
+
+	for (size_t v = 0; v < function->n_variables; ++v)
+		stack_size += function->variables[v].bytes_size;
+
+	// return nearest multiple of 16 (rounded up)
+	// NOTE that this is a pretty lazy approach and will subtract
+	// 16 even if we're allocating zero locals. 16 bytes is not a big deal, though
+	return 16 * ((stack_size / 16) + 1);
+}
+
 bool asm_function_create(
 		FILE* asm_file,
 		struct global_scope_t* global_scope,
@@ -987,8 +1103,10 @@ bool asm_function_create(
 	{
 		// general boilerplate for creating a function
 		fprintf(asm_file, "\n%s:\n", global_scope->functions[i].name);
-		fprintf(asm_file, "\t%s\n", "pushq %rbp");
-		fprintf(asm_file, "\t%s\n", "movq %rsp, %rbp");
+		fprintf(asm_file, "\tpushq %%rbp\n");
+		fprintf(asm_file, "\tmovq %%rsp, %%rbp\n");
+		size_t stack_space = _get_function_total_stack_space(&global_scope->functions[i]);
+		fprintf(asm_file, "\tsubq $%zu, %%rsp\n\n", stack_space);
 
 		// move function parameters into stack
 		struct function_t* function = &global_scope->functions[i];

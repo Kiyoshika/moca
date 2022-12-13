@@ -61,6 +61,10 @@ target_include_directories(mocaerr
 	${moca_SOURCE_DIR}/include
 )
 
+
+add_subdirectory(parser)
+add_subdirectory(objects)
+
 # UTIL
 add_library(mocautil
 	util.c
@@ -70,8 +74,11 @@ target_include_directories(mocautil
 	${moca_SOURCE_DIR}/include
 	${moca_SOURCE_DIR}/include/objects
 )
+target_link_libraries(mocautil
+	mocafunction
+	mocaparameter
+	mocavariable
+)
 
-add_subdirectory(parser)
-add_subdirectory(objects)
 add_subdirectory(asm)
 add_subdirectory(frontend)
