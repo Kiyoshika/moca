@@ -41,6 +41,7 @@ bool parser_variable_assignment(
 	ssize_t variable_stack_position = 0;
 	size_t variable_bytes_size = 0;
 	bool is_parameter = false;
+
 	if (!util_find_variable_position(
 				function,
 				var_name,

@@ -13,6 +13,7 @@
 #include "parameters.h"
 #include "parser.h"
 #include "built_in_functions.h"
+#include "util.h"
 
 bool _function_name_reserved(
 		const char* function_name,
@@ -286,6 +287,9 @@ bool parser_create_function(
 
 				if (!success)
 					goto endparse;
+
+				token_buffer_idx++;
+				tkn_array_clear(&function_buffer);
 				break;
 			}
 
@@ -302,6 +306,8 @@ bool parser_create_function(
 
 				if (!success)
 					goto endparse;
+
+				tkn_array_clear(&function_buffer);
 				break;
 			}
 
