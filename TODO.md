@@ -1,6 +1,9 @@
 # TODO LIST
 (Not necessarily in order)
 
+## Developer Guide
+* Definitely need to start documenting details related to development towards moca now that it's becoming a bit more stable. Describe how the parser works, the function instructions, translating those function instructions into assembly, etc.
+
 ## BUGS:
 * Providing non-existant moca file to comiler frontend causes it to crash
 * No error is thrown when calling a function that is not initialised
