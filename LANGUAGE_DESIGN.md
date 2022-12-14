@@ -1,14 +1,15 @@
 # Language Design
 **NOTE:** This is still early design and syntax/functionality may be changed or even removed from the final cut.
 
-** Contents **
+**Contents:**
 1. [Data Types](#data-types)
-2. [Memory Allocation & Pointers](#memory-allocation-pointers)
+2. [Memory Allocation & Pointers](#memory-allocation--pointers)
 3. [Changes to Function Calls](#changes-to-function-calls)
 4. [Struct Resource Management](#struct-resource-management)
 5. [Struct Method Unions](#struct-method-unions)
-5. [Getters & Setters](#getters-setters)
+5. [Getters & Setters](#getters--setters)
 6. [RAII](#raii)
+7. [Unconfirmed Ideas](#unconfirmed-ideas)
 
 ## Data Types
 The data types will be similar to what you're used to in C.
@@ -317,3 +318,8 @@ int32 main()
 Whenever we create the new struct, we actually have two pointers - one pointer to `data` and the pointer to `x` inside of `data`. Notice we're not freeing either of them. When the function goes out of scope, it will call the destructor (if any) to clean up the memory inside of the struct before also deallocating the pointer to `data` automatically.
 
 TODO: expand on some of the other features mentioned: lambdas, namespaces, etc.
+
+## Unconfirmed Ideas
+This is a list of potential ideas that may or may not come into the language.
+1. Ability to toggle default const-ness.
+	* Currently moca is mutable-by-default. This means passing something by value or by reference will allow you to modify it unless preceeded with the `const` keyword. Is it worth adding a compiler flag to enable const-by-default where anything passed by value/reference will be const unless preceeded with a `mut` keyword (making it mutable, similar to Rust).
